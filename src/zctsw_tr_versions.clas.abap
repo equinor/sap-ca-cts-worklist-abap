@@ -87,7 +87,7 @@ CLASS ZCTSW_TR_VERSIONS IMPLEMENTATION.
         ls_page_difference-rstate = 'M'.
     endif.
 
-    DATA(lo_html) = zcl_ca_compare_code=>render_diff_public( ls_page_difference ).
+    DATA(lo_html) = zcl_cts_compare_code=>render_diff_public( ls_page_difference ).
 
     r_compare_text = lo_html->render(
 *                         iv_no_indent_jscss =

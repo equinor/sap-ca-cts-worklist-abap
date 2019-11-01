@@ -1,4 +1,4 @@
-CLASS ZCTSW_TRANSPORT_DPC_EXT DEFINITION
+CLASS zctsw_transport_dpc_ext DEFINITION
   PUBLIC
   INHERITING FROM zctsw_transport_dpc
   CREATE PUBLIC .
@@ -43,7 +43,7 @@ ENDCLASS.
 
 
 
-CLASS ZCTSW_TRANSPORT_DPC_EXT IMPLEMENTATION.
+CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 
 
   METHOD /iwbep/if_mgw_appl_srv_runtime~execute_action.
@@ -81,8 +81,8 @@ CLASS ZCTSW_TRANSPORT_DPC_EXT IMPLEMENTATION.
 * CHGxxxxxxx ADKRA\774888 08.10.2019 Method created
 *-----------------------------------------------------------------------
 
-    DATA: ls_compare_entity TYPE zctsw_transport_mpc_ext=>ts_compareversions,
-          l_version_info_left TYPE if_wb_object_version=>ty_wb_object_version,
+    DATA: ls_compare_entity    TYPE zctsw_transport_mpc_ext=>ts_compareversions,
+          l_version_info_left  TYPE if_wb_object_version=>ty_wb_object_version,
           l_version_info_right TYPE if_wb_object_version=>ty_wb_object_version.
 
 
@@ -92,18 +92,18 @@ CLASS ZCTSW_TRANSPORT_DPC_EXT IMPLEMENTATION.
     ).
 
 
-    DATA(lo_version_comparison) = NEW zcl_ca_cts_tr_versions( ).
+    DATA(lo_version_comparison) = NEW zctsw_tr_versions( ).
 
-    if ( ls_compare_entity-version_left = '00000' and ls_compare_entity-version_right = '00000' ).
-        lo_version_comparison->find_last_change_versions(
-            exporting
-             l_object_type = ls_compare_entity-object_type
-             l_object_name = ls_compare_entity-object_name
-            importing
-             e_version_previous_change  = ls_compare_entity-version_right
-             e_version_latest           = ls_compare_entity-version_left
-             ).
-    endif.
+    IF ( ls_compare_entity-version_left = '00000' AND ls_compare_entity-version_right = '00000' ).
+      lo_version_comparison->find_last_change_versions(
+          EXPORTING
+           l_object_type = ls_compare_entity-object_type
+           l_object_name = ls_compare_entity-object_name
+          IMPORTING
+           e_version_previous_change  = ls_compare_entity-version_right
+           e_version_latest           = ls_compare_entity-version_left
+           ).
+    ENDIF.
 
 
     DATA(l_source_code_left) = lo_version_comparison->read_version_file(
@@ -123,10 +123,10 @@ CLASS ZCTSW_TRANSPORT_DPC_EXT IMPLEMENTATION.
         IMPORTING
             e_version_info = l_version_info_right ).
 
-    if ( ls_compare_entity-version_right = 0 and ls_compare_entity-version_right = 0 ).
-    " New object without version history
-        clear l_source_code_right.
-    endif.
+    IF ( ls_compare_entity-version_right = 0 AND ls_compare_entity-version_right = 0 ).
+      " New object without version history
+      CLEAR l_source_code_right.
+    ENDIF.
 
     ls_compare_entity-rendered_compare_html =  lo_version_comparison->compare_text_content(
       EXPORTING

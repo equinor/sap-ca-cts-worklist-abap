@@ -225,15 +225,15 @@ lo_nav_property   type ref to /iwbep/if_mgw_odata_nav_prop.                     
 
 * Navigation Properties for entity - Request
 lo_entity_type = model->get_entity_type( iv_entity_name = 'Request' ). "#EC NOTEXT
-lo_nav_property = lo_entity_type->create_navigation_property( iv_property_name  = 'ToImportSystems' "#EC NOTEXT
-                                                              iv_abap_fieldname = 'TO_IMPORT_SYSTEMS' "#EC NOTEXT
-                                                              iv_association_name = 'Request_ImportSystems' ). "#EC NOTEXT
-lo_nav_property = lo_entity_type->create_navigation_property( iv_property_name  = 'ToObjects' "#EC NOTEXT
-                                                              iv_abap_fieldname = 'TO_OBJECTS' "#EC NOTEXT
-                                                              iv_association_name = 'Request_Objects' ). "#EC NOTEXT
 lo_nav_property = lo_entity_type->create_navigation_property( iv_property_name  = 'ToTasks' "#EC NOTEXT
                                                               iv_abap_fieldname = 'TO_TASKS' "#EC NOTEXT
                                                               iv_association_name = 'Request_Tasks' ). "#EC NOTEXT
+lo_nav_property = lo_entity_type->create_navigation_property( iv_property_name  = 'ToObjects' "#EC NOTEXT
+                                                              iv_abap_fieldname = 'TO_OBJECTS' "#EC NOTEXT
+                                                              iv_association_name = 'Request_Objects' ). "#EC NOTEXT
+lo_nav_property = lo_entity_type->create_navigation_property( iv_property_name  = 'ToImportSystems' "#EC NOTEXT
+                                                              iv_abap_fieldname = 'TO_IMPORT_SYSTEMS' "#EC NOTEXT
+                                                              iv_association_name = 'Request_ImportSystems' ). "#EC NOTEXT
 * Navigation Properties for entity - Task
 lo_entity_type = model->get_entity_type( iv_entity_name = 'Task' ). "#EC NOTEXT
 lo_nav_property = lo_entity_type->create_navigation_property( iv_property_name  = 'ToObjects' "#EC NOTEXT
@@ -382,10 +382,10 @@ lo_entity_type = model->create_entity_type( iv_entity_type_name = 'Import_System
 *Properties
 ***********************************************************************************************************************************
 
-lo_property = lo_entity_type->create_property( iv_property_name = 'Systemid' iv_abap_fieldname = 'SYSTEMID' ). "#EC NOTEXT
+lo_property = lo_entity_type->create_property( iv_property_name = 'Trkorr' iv_abap_fieldname = 'TRKORR' ). "#EC NOTEXT
 lo_property->set_is_key( ).
 lo_property->set_type_edm_string( ).
-lo_property->set_maxlength( iv_max_length = 3 ). "#EC NOTEXT
+lo_property->set_maxlength( iv_max_length = 20 ). "#EC NOTEXT
 lo_property->set_creatable( abap_false ).
 lo_property->set_updatable( abap_false ).
 lo_property->set_sortable( abap_false ).
@@ -395,10 +395,10 @@ lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
       EXPORTING
         iv_key      = 'unicode'
         iv_value    = 'false' ).
-lo_property = lo_entity_type->create_property( iv_property_name = 'Trkorr' iv_abap_fieldname = 'TRKORR' ). "#EC NOTEXT
+lo_property = lo_entity_type->create_property( iv_property_name = 'Systemid' iv_abap_fieldname = 'SYSTEMID' ). "#EC NOTEXT
 lo_property->set_is_key( ).
 lo_property->set_type_edm_string( ).
-lo_property->set_maxlength( iv_max_length = 20 ). "#EC NOTEXT
+lo_property->set_maxlength( iv_max_length = 3 ). "#EC NOTEXT
 lo_property->set_creatable( abap_false ).
 lo_property->set_updatable( abap_false ).
 lo_property->set_sortable( abap_false ).
@@ -1703,7 +1703,7 @@ lo_entity_set->set_filter_required( abap_false ).
 *&---------------------------------------------------------------------*
 
 
-  CONSTANTS: lc_gen_date_time TYPE timestamp VALUE '20191025103103'.                  "#EC NOTEXT
+  CONSTANTS: lc_gen_date_time TYPE timestamp VALUE '20191031135406'.                  "#EC NOTEXT
   rv_last_modified = super->get_last_modified( ).
   IF rv_last_modified LT lc_gen_date_time.
     rv_last_modified = lc_gen_date_time.

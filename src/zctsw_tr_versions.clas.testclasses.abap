@@ -10,7 +10,7 @@ CLASS ltcl_ca_cts_tr_versions DEFINITION FINAL FOR TESTING
       read_source_code FOR TESTING,
       tr_from_different_change for testing.
 
-    DATA mo_cut TYPE REF TO zcl_ca_cts_tr_versions.
+    DATA mo_cut TYPE REF TO ZCTSW_TR_VERSIONS.
 ENDCLASS.
 
 

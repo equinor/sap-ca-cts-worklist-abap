@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_ENHO" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <TOOL>BADI_IMPL</TOOL>
+   <SHORTTEXT>Local development system system alias</SHORTTEXT>
+   <SPOT_NAME>/IWFND/ES_MGW_DEST_FINDER</SPOT_NAME>
+   <IMPL>
+    <ENH_BADI_IMPL_DATA>
+     <SPOT_NAME>/IWFND/ES_MGW_DEST_FINDER</SPOT_NAME>
+     <BADI_NAME>/IWFND/BD_MGW_DEST_FINDER</BADI_NAME>
+     <IMPL_NAME>ZCTSW_SYSTEM_ALIAS</IMPL_NAME>
+     <IMPL_CLASS>ZCTSW_SYSTEM_ALIAS</IMPL_CLASS>
+     <ACTIVE>X</ACTIVE>
+     <IMPL_SHORTTEXT>Badi implementation for system alias in dev systems</IMPL_SHORTTEXT>
+     <IMPL_SHORTTEXT_ID>005056A172881ED9BEFE37B502B3812A</IMPL_SHORTTEXT_ID>
+    </ENH_BADI_IMPL_DATA>
+   </IMPL>
+  </asx:values>
+ </asx:abap>
+</abapGit>

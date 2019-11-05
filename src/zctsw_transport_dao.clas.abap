@@ -104,6 +104,18 @@ CLASS zctsw_transport_dao DEFINITION
         !i_object            TYPE trobjtype
       RETURNING
         VALUE(r_description) TYPE string .
+    CLASS-METHODS get_package_for_object
+      IMPORTING
+        !i_object        TYPE trobjtype
+        !i_obj_name      TYPE sobj_name
+      RETURNING
+        VALUE(r_package) TYPE devclass.
+    CLASS-METHODS get_app_component_for_package
+      IMPORTING
+        !i_package             TYPE devclass
+      RETURNING
+        VALUE(r_app_component) TYPE ufps_posid.
+
   PROTECTED SECTION.
   PRIVATE SECTION.
 
@@ -389,6 +401,8 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
         e_abs_url = ls_object-adt_abs_url
         e_rel_url = ls_object-adt_rel_url ).
 
+      ls_object-dev_package = get_package_for_object( i_object = ls_object-objecttype i_obj_name = ls_object-obj_name(40) ).
+
       " Get source code ADT link
       CASE ls_object-objecttype.
         WHEN 'CLAS' OR 'METH' OR 'CLSD' OR 'CPRI' OR 'CPUB'. "Class objects
@@ -407,6 +421,7 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
           ls_object-adt_eclipse_url = 'adt://' && sy-sysid && ls_object-adt_rel_url.
           ls_object-object_description = 'Class'.
           ls_object-is_source = abap_true.
+          ls_object-dev_package = get_package_for_object( i_object = 'CLAS' i_obj_name = ls_object-obj_name(40) ).
         WHEN 'WDYV'. "Web Dynpro view objects
           ls_object-objecttype = ls_object-objecttype.
           ls_object-obj_name = ls_object-obj_name.
@@ -439,6 +454,7 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
           ls_object-adt_eclipse_url = 'adt://' && sy-sysid && ls_object-adt_rel_url.
           ls_object-object_description = get_description_for_object( i_pgmid = ls_object-pgmid i_object = ls_object-objecttype ).
           ls_object-is_source = abap_true.
+          ls_object-dev_package = get_package_for_object( i_object = 'WDYA' i_obj_name = ls_object-obj_name(40) ).
         WHEN 'REPS' OR 'PROG'. " Report
           ls_object-objecttype = ls_object-objecttype.
           ls_object-obj_name = ls_object-obj_name.
@@ -455,9 +471,11 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
           ls_object-adt_eclipse_url = 'adt://' && sy-sysid && ls_object-adt_rel_url.
           ls_object-object_description = get_description_for_object( i_pgmid = ls_object-pgmid i_object = ls_object-objecttype ).
           ls_object-is_source = abap_true.
+          ls_object-dev_package = get_package_for_object( i_object = 'PROG' i_obj_name = ls_object-obj_name(40) ).
         WHEN OTHERS.
           ls_object-object_description = get_description_for_object( i_pgmid = ls_object-pgmid i_object = ls_object-objecttype ).
       ENDCASE.
+      ls_object-app_component = get_app_component_for_package( ls_object-dev_package ).
 
 
       MODIFY rt_objects FROM ls_object.
@@ -879,4 +897,46 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
 
 
   ENDMETHOD.
+
+  METHOD get_package_for_object.
+*-----------------------------------------------------------------------
+* Get package for object
+*-----------------------------------------------------------------------
+* Change     Developer    Date       Description
+*            fstod\906575 05.11.2019 Created object
+*-----------------------------------------------------------------------
+
+    SELECT SINGLE devclass FROM tadir INTO r_package
+     WHERE object = i_object
+     AND   obj_name = i_obj_name.
+
+  ENDMETHOD.
+
+  METHOD get_app_component_for_package.
+*-----------------------------------------------------------------------
+* Get application component for package
+* Get the application component of the package - if no
+* component is found, the component of the super-package is returned
+*-----------------------------------------------------------------------
+* Change     Developer    Date       Description
+*            fstod\906575 05.11.2019 Created object
+*-----------------------------------------------------------------------
+
+    SELECT SINGLE b~ps_posid, a~parentcl
+      FROM tdevc AS a
+      INNER JOIN df14l AS b
+        ON fctr_id = a~component
+      INTO  ( @DATA(lv_app_component), @DATA(lv_super_package) )
+      WHERE devclass = @i_package
+      AND   as4local = 'A'.
+
+    IF NOT lv_app_component IS INITIAL.
+      r_app_component = lv_app_component.
+    ELSEIF NOT lv_super_package IS INITIAL.
+      get_app_component_for_package( lv_super_package ).
+    ENDIF.
+
+
+  ENDMETHOD.
+
 ENDCLASS.

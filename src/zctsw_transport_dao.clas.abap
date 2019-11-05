@@ -34,6 +34,12 @@ CLASS zctsw_transport_dao DEFINITION
     CLASS-DATA gt_user_full_name TYPE ty_user_full_name_tab .
     CLASS-DATA gt_user_short_name TYPE ty_user_full_name_tab .
 
+    CLASS-METHODS get_username_from_email
+      IMPORTING
+        i_email           TYPE string
+      RETURNING
+        VALUE(r_username) TYPE string.
+
     METHODS constructor .
     METHODS get_modifiable_transports
       IMPORTING
@@ -133,6 +139,19 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
 
   ENDMETHOD.
 
+  METHOD get_username_from_email.
+*-----------------------------------------------------------------------
+* Get username from email
+*-----------------------------------------------------------------------
+* Change     Developer    Date       Description
+*
+*-----------------------------------------------------------------------
+
+    IF NOT i_email IS INITIAL.
+      SPLIT i_email AT '@' INTO r_username DATA(lv_domain).
+    ENDIF.
+
+  ENDMETHOD.
 
   METHOD get_adt_url_for_object.
 *-----------------------------------------------------------------------
@@ -742,7 +761,7 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
            ON a~persnumber = b~persnumber
            WHERE a~bname   = @i_as4user.
 
-      r_username = zcl_ca_resource_user=>get_username_from_email( CONV #( lv_email ) ).
+      r_username = get_username_from_email( CONV #( lv_email ) ).
 
       ls_user-bname = i_as4user.
       ls_user-shortname = r_username.

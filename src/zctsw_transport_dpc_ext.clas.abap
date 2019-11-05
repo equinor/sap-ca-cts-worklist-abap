@@ -52,7 +52,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 
     CASE iv_action_name.
       WHEN 'Release'.
-        zcl_ca_cts_transport_dao=>release_transport(
+        zctsw_transport_dao=>release_transport(
           EXPORTING
             i_trkorr     = CONV #( it_parameter[ name = 'Trkorr' ]-value )
           IMPORTING
@@ -151,7 +151,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 * CHG0134314 fstod\906575 12.03.2018 Method created
 *-----------------------------------------------------------------------
 
-    DATA: lo_dao    TYPE REF TO zcl_ca_cts_transport_dao.
+    DATA: lo_dao    TYPE REF TO zctsw_transport_dao.
 
     CREATE OBJECT lo_dao.
 
@@ -175,7 +175,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 * CHG0134314 fstod\906575 12.03.2018 Method created
 *-----------------------------------------------------------------------
 
-    DATA: lo_dao    TYPE REF TO zcl_ca_cts_transport_dao,
+    DATA: lo_dao    TYPE REF TO zctsw_transport_dao,
           ls_entity TYPE zctsw_transport_mpc=>ts_import_system.
 
     CREATE OBJECT lo_dao.
@@ -200,7 +200,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 * CHG0134314 fstod\906575 12.03.2018 Method created
 *-----------------------------------------------------------------------
 
-    DATA: lo_dao            TYPE REF TO zcl_ca_cts_transport_dao,
+    DATA: lo_dao            TYPE REF TO zctsw_transport_dao,
           ls_transport_line TYPE cnvc_scwb_trs,
           lt_transports     TYPE cnvc_scwb_tr,
           ls_filter         TYPE /iwbep/s_mgw_select_option,
@@ -283,7 +283,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 * CHG0134314 fstod\906575 12.03.2018 Method created
 *-----------------------------------------------------------------------
 
-    DATA: lo_dao              TYPE REF TO zcl_ca_cts_transport_dao,
+    DATA: lo_dao              TYPE REF TO zctsw_transport_dao,
           lt_transports_range TYPE cnvc_scwb_tr,
           ls_transport_line   TYPE cnvc_scwb_trs.
 
@@ -313,7 +313,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 * CHG0134314 fstod\906575 12.03.2018 Method created
 *-----------------------------------------------------------------------
 
-    DATA: lo_dao    TYPE REF TO zcl_ca_cts_transport_dao,
+    DATA: lo_dao    TYPE REF TO zctsw_transport_dao,
           lt_users  TYPE trgr_user,
           lt_dates  TYPE trgr_date,
           lt_text   TYPE /iwbep/t_cod_select_options,
@@ -410,7 +410,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 *-----------------------------------------------------------------------
 
 
-    DATA: lo_dao            TYPE REF TO zcl_ca_cts_transport_dao,
+    DATA: lo_dao            TYPE REF TO zctsw_transport_dao,
           r_transports      TYPE cnvc_scwb_tr,
           ls_transport_line TYPE cnvc_scwb_trs.
 
@@ -440,7 +440,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 * CHG0134314 fstod\906575 12.03.2018 Method created
 *-----------------------------------------------------------------------
 
-    DATA: lo_dao            TYPE REF TO zcl_ca_cts_transport_dao,
+    DATA: lo_dao            TYPE REF TO zctsw_transport_dao,
           lt_transport_key  TYPE  cnvc_scwb_tr,
           ls_transport_key  TYPE cnvc_scwb_trs,
           lv_parent_request TYPE trkorr,

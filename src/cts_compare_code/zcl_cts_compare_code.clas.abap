@@ -95,30 +95,10 @@ CLASS zcl_cts_compare_code DEFINITION
       IMPORTING iv_d1         TYPE xstring
                 iv_d2         TYPE xstring
       RETURNING VALUE(rv_yes) TYPE abap_bool.
-    METHODS render_patch
-      IMPORTING
-        io_html                TYPE REF TO zcl_cts_html
-        iv_patch_line_possible TYPE abap_bool
-        iv_filename            TYPE string
-        is_diff_line           TYPE zif_cts_definitions=>ty_diff
-        iv_index               TYPE sy-tabix.
-    METHODS apply_patch_all
-      IMPORTING
-        iv_patch      TYPE string
-        iv_patch_flag TYPE abap_bool
-      RAISING
-        zcx_cts_exception.
-    METHODS render_patch_head
-      IMPORTING
-        io_html TYPE REF TO zcl_cts_html
-        is_diff TYPE zcl_cts_compare_code=>ty_file_diff.
-    METHODS apply_patch_for
-      IMPORTING
-        iv_filename   TYPE string
-        iv_line_index TYPE string
-        iv_patch_flag TYPE abap_bool
-      RAISING
-        zcx_cts_exception.
+
+
+
+
     METHODS get_diff_object
       IMPORTING
         iv_filename    TYPE string
@@ -134,19 +114,8 @@ CLASS zcl_cts_compare_code DEFINITION
         VALUE(rs_diff) TYPE zif_cts_definitions=>ty_diff
       RAISING
         zcx_cts_exception.
-    METHODS are_all_lines_patched
-      IMPORTING
-        it_diff                         TYPE zif_cts_definitions=>ty_diffs_tt
-      RETURNING
-        VALUE(rv_are_all_lines_patched) TYPE abap_bool.
-    CLASS-METHODS get_patch_data
-      IMPORTING
-        iv_patch      TYPE string
-      EXPORTING
-        ev_filename   TYPE string
-        ev_line_index TYPE string
-      RAISING
-        zcx_cts_exception.
+
+
     CLASS-METHODS render_item_state
       IMPORTING
         !iv_lstate     TYPE char1
@@ -164,80 +133,13 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
 
 
 
-  METHOD apply_patch_all.
-
-    DATA: lv_filename   TYPE string,
-          lt_patch      TYPE string_table,
-          lv_line_index TYPE string.
-
-    FIELD-SYMBOLS: <lv_patch>     TYPE LINE OF string_table.
-
-    SPLIT iv_patch AT ',' INTO TABLE lt_patch.
-
-    LOOP AT lt_patch ASSIGNING <lv_patch>.
-
-      get_patch_data(
-        EXPORTING
-          iv_patch      = <lv_patch>
-        IMPORTING
-          ev_filename   = lv_filename
-          ev_line_index = lv_line_index ).
-
-      apply_patch_for( iv_filename   = lv_filename
-                       iv_line_index = lv_line_index
-                       iv_patch_flag = iv_patch_flag ).
-
-    ENDLOOP.
-
-  ENDMETHOD.
 
 
-  METHOD apply_patch_for.
-
-    DATA: lo_diff      TYPE REF TO zcl_cts_diff,
-          ls_diff_line TYPE zif_cts_definitions=>ty_diff,
-          lv_line      TYPE i.
-
-    lo_diff = get_diff_object( iv_filename ).
-
-    ls_diff_line = get_diff_line( io_diff       = lo_diff
-                                  iv_line_index = iv_line_index ).
-
-    CASE ls_diff_line-result.
-      WHEN zif_cts_definitions=>c_diff-update
-        OR zif_cts_definitions=>c_diff-insert.
-
-        lv_line = ls_diff_line-new_num.
-
-        lo_diff->set_patch_new( iv_line_new   = lv_line
-                                iv_patch_flag = iv_patch_flag ).
-
-      WHEN zif_cts_definitions=>c_diff-delete.
-
-        lv_line =  ls_diff_line-old_num.
-
-        lo_diff->set_patch_old( iv_line_old   = lv_line
-                                iv_patch_flag = iv_patch_flag ).
-
-    ENDCASE.
-
-  ENDMETHOD.
 
 
-  METHOD are_all_lines_patched.
 
-    DATA: lv_patch_count TYPE i.
 
-    FIELD-SYMBOLS: <ls_diff> TYPE zif_cts_definitions=>ty_diff.
 
-    LOOP AT it_diff ASSIGNING <ls_diff>
-                    WHERE patch_flag = abap_true.
-      lv_patch_count = lv_patch_count + 1.
-    ENDLOOP.
-
-    rv_are_all_lines_patched = boolc( lv_patch_count = lines( it_diff ) ).
-
-  ENDMETHOD.
 
 
 
@@ -289,20 +191,7 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD get_patch_data.
 
-    DATA: lv_section TYPE string.
-
-    CLEAR: ev_filename, ev_line_index.
-
-    FIND FIRST OCCURRENCE OF REGEX `patch_line` && `_(.*)_(\d)+_(\d+)`
-         IN iv_patch
-         SUBMATCHES ev_filename lv_section ev_line_index.
-    IF sy-subrc <> 0.
-      zcx_cts_exception=>raise( |Invalid patch| ).
-    ENDIF.
-
-  ENDMETHOD.
 
 
   METHOD is_binary.
@@ -580,16 +469,6 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
     " render line, inverse sides if remote is newer
     ro_html->add( '<tr>' ).                                 "#EC NOTEXT
 
-    IF mv_patch_mode = abap_true.
-
-      render_patch( io_html                = ro_html
-                    iv_patch_line_possible = lv_patch_line_possible
-                    iv_filename            = iv_filename
-                    is_diff_line           = is_diff_line
-                    iv_index               = iv_index ).
-
-    ENDIF.
-
     IF iv_fstate = c_fstate-remote. " Remote file leading changes
       ro_html->add( lv_old ). " local
       ro_html->add( lv_new ). " remote
@@ -650,45 +529,10 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD render_patch.
-
-    CONSTANTS:
-      BEGIN OF c_css_class,
-        patch TYPE string VALUE `patch` ##NO_TEXT,
-      END OF c_css_class.
-
-    DATA: lv_id          TYPE string,
-          lv_left_class  TYPE string,
-          lv_right_class TYPE string,
-          lv_object      TYPE string.
-
-    lv_object = iv_filename.
-
-    IF iv_patch_line_possible = abap_true.
-
-      lv_id = |{ lv_object }_{ mv_section_count }_{ iv_index }|.
-
-      io_html->add( |<td class="{ c_css_class-patch }">| ).
-      io_html->add_checkbox( iv_id = |patch_line_{ lv_id }| ).
-      io_html->add( |</td>| ).
-
-    ELSE.
-
-      io_html->add( |<td class="{ c_css_class-patch }">| ).
-      io_html->add( |</td>| ).
-
-    ENDIF.
-
-  ENDMETHOD.
 
 
-  METHOD render_patch_head.
 
-    io_html->add( |<th class="patch">| ).
-    io_html->add_checkbox( iv_id = |patch_file_{ is_diff-filename }| ).
-    io_html->add( '</th>' ).
 
-  ENDMETHOD.
 
 
   METHOD render_table_head.
@@ -703,13 +547,6 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
       ro_html->add( '<th class="num">new</th>' ).           "#EC NOTEXT
       ro_html->add( '<th>code</th>' ).                      "#EC NOTEXT
     ELSE.
-
-      IF mv_patch_mode = abap_true.
-
-        render_patch_head( io_html = ro_html
-                           is_diff = is_diff ).
-
-      ENDIF.
 
       ro_html->add( '<th class="num"></th>' ).              "#EC NOTEXT
       ro_html->add( '<th>LOCAL</th>' ).                     "#EC NOTEXT

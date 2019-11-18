@@ -59,12 +59,10 @@ CLASS zcl_cts_compare_code DEFINITION
                END OF c_patch_action.
 
     DATA: mt_diff_files    TYPE tt_file_diff,
-          mt_delayed_lines TYPE zif_abapgit_definitions=>ty_diffs_tt,
+          mt_delayed_lines TYPE zif_cts_definitions=>ty_diffs_tt,
           mv_unified       TYPE abap_bool VALUE abap_true,
-          mv_repo_key      TYPE zif_abapgit_persistence=>ty_repo-key,
           mv_seed          TYPE string, " Unique page id to bind JS sessionStorage
           mv_patch_mode    TYPE abap_bool,
-          mo_stage         TYPE REF TO zcl_abapgit_stage,
           mv_section_count TYPE i.
 
     METHODS render_diff
@@ -80,22 +78,22 @@ CLASS zcl_cts_compare_code DEFINITION
       IMPORTING is_diff        TYPE ty_file_diff
       RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
     METHODS render_beacon
-      IMPORTING is_diff_line   TYPE zif_abapgit_definitions=>ty_diff
+      IMPORTING is_diff_line   TYPE zif_cts_definitions=>ty_diff
                 is_diff        TYPE ty_file_diff
       RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
     METHODS render_line_split
-      IMPORTING is_diff_line   TYPE zif_abapgit_definitions=>ty_diff
+      IMPORTING is_diff_line   TYPE zif_cts_definitions=>ty_diff
                 iv_filename    TYPE string
                 iv_fstate      TYPE char1
                 iv_index       TYPE sy-tabix
       RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
     METHODS render_line_unified
-      IMPORTING is_diff_line   TYPE zif_abapgit_definitions=>ty_diff OPTIONAL
+      IMPORTING is_diff_line   TYPE zif_cts_definitions=>ty_diff OPTIONAL
       RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
     METHODS append_diff
-      IMPORTING it_remote TYPE zif_abapgit_definitions=>ty_files_tt
-                it_local  TYPE zif_abapgit_definitions=>ty_files_item_tt
-                is_status TYPE zif_abapgit_definitions=>ty_result
+      IMPORTING it_remote TYPE zif_cts_definitions=>ty_files_tt
+                it_local  TYPE zif_cts_definitions=>ty_files_item_tt
+                is_status TYPE zif_cts_definitions=>ty_result
       RAISING   zcx_cts_exception.
 *    METHODS build_menu
 *      RETURNING VALUE(ro_menu) TYPE REF TO zcl_cts_html_toolbar.
@@ -103,15 +101,12 @@ CLASS zcl_cts_compare_code DEFINITION
       IMPORTING iv_d1         TYPE xstring
                 iv_d2         TYPE xstring
       RETURNING VALUE(rv_yes) TYPE abap_bool.
-    METHODS add_to_stage
-      RAISING
-        zcx_cts_exception.
     METHODS render_patch
       IMPORTING
         io_html                TYPE REF TO zcl_cts_html
         iv_patch_line_possible TYPE abap_bool
         iv_filename            TYPE string
-        is_diff_line           TYPE zif_abapgit_definitions=>ty_diff
+        is_diff_line           TYPE zif_cts_definitions=>ty_diff
         iv_index               TYPE sy-tabix.
     METHODS apply_patch_all
       IMPORTING
@@ -142,12 +137,12 @@ CLASS zcl_cts_compare_code DEFINITION
         io_diff        TYPE REF TO zcl_cts_diff
         iv_line_index  TYPE string
       RETURNING
-        VALUE(rs_diff) TYPE zif_abapgit_definitions=>ty_diff
+        VALUE(rs_diff) TYPE zif_cts_definitions=>ty_diff
       RAISING
         zcx_cts_exception.
     METHODS are_all_lines_patched
       IMPORTING
-        it_diff                         TYPE zif_abapgit_definitions=>ty_diffs_tt
+        it_diff                         TYPE zif_cts_definitions=>ty_diffs_tt
       RETURNING
         VALUE(rv_are_all_lines_patched) TYPE abap_bool.
 *    METHODS add_jump_sub_menu
@@ -173,63 +168,6 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
 
 
 
-  METHOD add_to_stage.
-
-    DATA: lo_repo              TYPE REF TO zcl_abapgit_repo_online,
-          lt_diff              TYPE zif_abapgit_definitions=>ty_diffs_tt,
-          lv_something_patched TYPE abap_bool,
-          lv_patch             TYPE xstring,
-          lo_git_add_patch     TYPE REF TO zcl_abapgit_git_add_patch.
-
-    FIELD-SYMBOLS: <ls_diff_file> TYPE zcl_cts_compare_code=>ty_file_diff.
-
-    lo_repo ?= zcl_abapgit_repo_srv=>get_instance( )->get( mv_repo_key ).
-
-    LOOP AT mt_diff_files ASSIGNING <ls_diff_file>.
-
-      IF <ls_diff_file>-o_diff IS NOT BOUND.
-        " When we deal with binary files we don't have a diff object.
-        " There's nothing to do because they cannot be patched
-        CONTINUE.
-      ENDIF.
-
-      lt_diff = <ls_diff_file>-o_diff->get( ).
-
-      READ TABLE lt_diff TRANSPORTING NO FIELDS
-                         WITH KEY patch_flag = abap_true.
-      CHECK sy-subrc = 0.
-
-      lv_something_patched = abap_true.
-
-      CREATE OBJECT lo_git_add_patch
-        EXPORTING
-          it_diff = <ls_diff_file>-o_diff->get( ).
-
-      lv_patch = lo_git_add_patch->get_patch_binary( ).
-
-      IF  <ls_diff_file>-lstate = 'D'
-      AND are_all_lines_patched( lt_diff ) = abap_true.
-
-        mo_stage->rm(
-            iv_path     = <ls_diff_file>-path
-            iv_filename = <ls_diff_file>-filename ).
-
-      ELSE.
-
-        mo_stage->add(
-            iv_path     = <ls_diff_file>-path
-            iv_filename = <ls_diff_file>-filename
-            iv_data     = lv_patch ).
-
-      ENDIF.
-
-    ENDLOOP.
-
-    IF lv_something_patched = abap_false.
-      zcx_cts_exception=>raise( |Nothing added| ).
-    ENDIF.
-
-  ENDMETHOD.
 
 
   METHOD append_diff.
@@ -357,15 +295,15 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
                                   iv_line_index = iv_line_index ).
 
     CASE ls_diff_line-result.
-      WHEN zif_abapgit_definitions=>c_diff-update
-        OR zif_abapgit_definitions=>c_diff-insert.
+      WHEN zif_cts_definitions=>c_diff-update
+        OR zif_cts_definitions=>c_diff-insert.
 
         lv_line = ls_diff_line-new_num.
 
         lo_diff->set_patch_new( iv_line_new   = lv_line
                                 iv_patch_flag = iv_patch_flag ).
 
-      WHEN zif_abapgit_definitions=>c_diff-delete.
+      WHEN zif_cts_definitions=>c_diff-delete.
 
         lv_line =  ls_diff_line-old_num.
 
@@ -381,7 +319,7 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
 
     DATA: lv_patch_count TYPE i.
 
-    FIELD-SYMBOLS: <ls_diff> TYPE zif_abapgit_definitions=>ty_diff.
+    FIELD-SYMBOLS: <ls_diff> TYPE zif_cts_definitions=>ty_diff.
 
     LOOP AT it_diff ASSIGNING <ls_diff>
                     WHERE patch_flag = abap_true.
@@ -411,7 +349,7 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
 
   METHOD get_diff_line.
 
-    DATA: lt_diff       TYPE zif_abapgit_definitions=>ty_diffs_tt,
+    DATA: lt_diff       TYPE zif_cts_definitions=>ty_diffs_tt,
           lv_line_index TYPE sy-tabix.
 
 
@@ -500,7 +438,7 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
   METHOD render_beacon.
 
     DATA: lv_beacon  TYPE string,
-          lt_beacons TYPE zif_abapgit_definitions=>ty_string_tt.
+          lt_beacons TYPE zif_cts_definitions=>ty_string_tt.
 
     CREATE OBJECT ro_html.
 
@@ -550,7 +488,7 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
 
     li_progress = zcl_abapgit_progress=>get_instance( lines( mt_diff_files ) ).
 
-    ro_html->add( |<div id="diff-list" data-repo-key="{ mv_repo_key }">| ).
+    ro_html->add( |<div id="diff-list" data-repo-key="REPO_KEY">| ).
     ro_html->add( zcl_abapgit_gui_chunk_lib=>render_js_error_banner( ) ).
     LOOP AT mt_diff_files INTO ls_diff_file.
       li_progress->show(
@@ -594,7 +532,7 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
 
   METHOD render_diff_head.
 
-    DATA: ls_stats TYPE zif_abapgit_definitions=>ty_count.
+    DATA: ls_stats TYPE zif_cts_definitions=>ty_count.
 
     CREATE OBJECT ro_html.
 
@@ -645,7 +583,7 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
   METHOD render_lines.
 
     DATA: lo_highlighter TYPE REF TO zcl_abapgit_syntax_highlighter,
-          lt_diffs       TYPE zif_abapgit_definitions=>ty_diffs_tt,
+          lt_diffs       TYPE zif_cts_definitions=>ty_diffs_tt,
           lv_insert_nav  TYPE abap_bool,
           lv_tabix       TYPE syst-tabix.
 
@@ -712,10 +650,10 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
     " New line
     lv_mark = ` `.
     IF is_diff_line-result IS NOT INITIAL.
-      IF iv_fstate = c_fstate-both OR is_diff_line-result = zif_abapgit_definitions=>c_diff-update.
+      IF iv_fstate = c_fstate-both OR is_diff_line-result = zif_cts_definitions=>c_diff-update.
         lv_bg = ' diff_upd'.
         lv_mark = `~`.
-      ELSEIF is_diff_line-result = zif_abapgit_definitions=>c_diff-insert.
+      ELSEIF is_diff_line-result = zif_cts_definitions=>c_diff-insert.
         lv_bg = ' diff_ins'.
         lv_mark = `+`.
       ENDIF.
@@ -731,10 +669,10 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
     CLEAR lv_bg.
     lv_mark = ` `.
     IF is_diff_line-result IS NOT INITIAL.
-      IF iv_fstate = c_fstate-both OR is_diff_line-result = zif_abapgit_definitions=>c_diff-update.
+      IF iv_fstate = c_fstate-both OR is_diff_line-result = zif_cts_definitions=>c_diff-update.
         lv_bg = ' diff_upd'.
         lv_mark = `~`.
-      ELSEIF is_diff_line-result = zif_abapgit_definitions=>c_diff-delete.
+      ELSEIF is_diff_line-result = zif_cts_definitions=>c_diff-delete.
         lv_bg = ' diff_del'.
         lv_mark = `-`.
       ENDIF.
@@ -779,7 +717,7 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
     CREATE OBJECT ro_html.
 
     " Release delayed subsequent update lines
-    IF is_diff_line-result <> zif_abapgit_definitions=>c_diff-update.
+    IF is_diff_line-result <> zif_cts_definitions=>c_diff-update.
       LOOP AT mt_delayed_lines ASSIGNING <ls_diff_line>.
         ro_html->add( '<tr>' ).                             "#EC NOTEXT
         ro_html->add( |<td class="num" line-num="{ <ls_diff_line>-old_num }"></td>|
@@ -799,13 +737,13 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
 
     ro_html->add( '<tr>' ).                                 "#EC NOTEXT
     CASE is_diff_line-result.
-      WHEN zif_abapgit_definitions=>c_diff-update.
+      WHEN zif_cts_definitions=>c_diff-update.
         APPEND is_diff_line TO mt_delayed_lines. " Delay output of subsequent updates
-      WHEN zif_abapgit_definitions=>c_diff-insert.
+      WHEN zif_cts_definitions=>c_diff-insert.
         ro_html->add( |<td class="num" line-num=""></td>|
                    && |<td class="num" line-num="{ is_diff_line-new_num }"></td>|
                    && |<td class="code diff_ins">+{ is_diff_line-new }</td>| ).
-      WHEN zif_abapgit_definitions=>c_diff-delete.
+      WHEN zif_cts_definitions=>c_diff-delete.
         ro_html->add( |<td class="num" line-num="{ is_diff_line-old_num }"></td>|
                    && |<td class="num" line-num=""></td>|
                    && |<td class="code diff_del">-{ is_diff_line-old }</td>| ).

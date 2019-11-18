@@ -45,7 +45,7 @@ CLASS zcl_cts_compare_code DEFINITION
 
 
   PRIVATE SECTION.
-    data:   mx_error            TYPE REF TO zcx_cts_exception.
+    DATA:   mx_error            TYPE REF TO zcx_cts_exception.
 
     TYPES: ty_patch_action TYPE string.
 
@@ -90,13 +90,7 @@ CLASS zcl_cts_compare_code DEFINITION
     METHODS render_line_unified
       IMPORTING is_diff_line   TYPE zif_cts_definitions=>ty_diff OPTIONAL
       RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
-    METHODS append_diff
-      IMPORTING it_remote TYPE zif_cts_definitions=>ty_files_tt
-                it_local  TYPE zif_cts_definitions=>ty_files_item_tt
-                is_status TYPE zif_cts_definitions=>ty_result
-      RAISING   zcx_cts_exception.
-*    METHODS build_menu
-*      RETURNING VALUE(ro_menu) TYPE REF TO zcl_cts_html_toolbar.
+
     METHODS is_binary
       IMPORTING iv_d1         TYPE xstring
                 iv_d2         TYPE xstring
@@ -145,12 +139,6 @@ CLASS zcl_cts_compare_code DEFINITION
         it_diff                         TYPE zif_cts_definitions=>ty_diffs_tt
       RETURNING
         VALUE(rv_are_all_lines_patched) TYPE abap_bool.
-*    METHODS add_jump_sub_menu
-*      IMPORTING
-*        io_menu TYPE REF TO zcl_cts_html_toolbar.
-*    METHODS add_filter_sub_menu
-*      IMPORTING
-*        io_menu TYPE REF TO zcl_cts_html_toolbar.
     CLASS-METHODS get_patch_data
       IMPORTING
         iv_patch      TYPE string
@@ -159,6 +147,12 @@ CLASS zcl_cts_compare_code DEFINITION
         ev_line_index TYPE string
       RAISING
         zcx_cts_exception.
+    CLASS-METHODS render_item_state
+      IMPORTING
+        !iv_lstate     TYPE char1
+        !iv_rstate     TYPE char1
+      RETURNING
+        VALUE(rv_html) TYPE string .
 
 ENDCLASS.
 
@@ -168,91 +162,6 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
 
 
 
-
-
-  METHOD append_diff.
-
-    DATA:
-      lv_offs    TYPE i,
-      ls_r_dummy LIKE LINE OF it_remote ##NEEDED,
-      ls_l_dummy LIKE LINE OF it_local  ##NEEDED.
-
-    FIELD-SYMBOLS: <ls_remote> LIKE LINE OF it_remote,
-                   <ls_local>  LIKE LINE OF it_local,
-                   <ls_diff>   LIKE LINE OF mt_diff_files.
-
-
-    READ TABLE it_remote ASSIGNING <ls_remote>
-      WITH KEY filename = is_status-filename
-               path     = is_status-path.
-    IF sy-subrc <> 0.
-      ASSIGN ls_r_dummy TO <ls_remote>.
-    ENDIF.
-
-    READ TABLE it_local ASSIGNING <ls_local>
-      WITH KEY file-filename = is_status-filename
-               file-path     = is_status-path.
-    IF sy-subrc <> 0.
-      ASSIGN ls_l_dummy TO <ls_local>.
-    ENDIF.
-
-    IF <ls_local> IS INITIAL AND <ls_remote> IS INITIAL.
-      zcx_cts_exception=>raise( |DIFF: file not found { is_status-filename }| ).
-    ENDIF.
-
-    APPEND INITIAL LINE TO mt_diff_files ASSIGNING <ls_diff>.
-    <ls_diff>-path     = is_status-path.
-    <ls_diff>-filename = is_status-filename.
-    <ls_diff>-lstate   = is_status-lstate.
-    <ls_diff>-rstate   = is_status-rstate.
-
-    IF <ls_diff>-lstate IS NOT INITIAL AND <ls_diff>-rstate IS NOT INITIAL.
-      <ls_diff>-fstate = c_fstate-both.
-    ELSEIF <ls_diff>-lstate IS NOT INITIAL.
-      <ls_diff>-fstate = c_fstate-local.
-    ELSE. "rstate IS NOT INITIAL, lstate = empty.
-      <ls_diff>-fstate = c_fstate-remote.
-    ENDIF.
-
-    " Changed by
-    IF <ls_local>-item-obj_type IS NOT INITIAL.
-      <ls_diff>-changed_by = to_lower( zcl_abapgit_objects=>changed_by( <ls_local>-item ) ).
-    ENDIF.
-
-    " Extension
-    IF <ls_local>-file-filename IS NOT INITIAL.
-      <ls_diff>-type = reverse( <ls_local>-file-filename ).
-    ELSE.
-      <ls_diff>-type = reverse( <ls_remote>-filename ).
-    ENDIF.
-
-    FIND FIRST OCCURRENCE OF '.' IN <ls_diff>-type MATCH OFFSET lv_offs.
-    <ls_diff>-type = reverse( substring( val = <ls_diff>-type len = lv_offs ) ).
-    IF <ls_diff>-type <> 'xml' AND <ls_diff>-type <> 'abap'.
-      <ls_diff>-type = 'other'.
-    ENDIF.
-
-    IF <ls_diff>-type = 'other'
-       AND is_binary( iv_d1 = <ls_remote>-data iv_d2 = <ls_local>-file-data ) = abap_true.
-      <ls_diff>-type = 'binary'.
-    ENDIF.
-
-    " Diff data
-    IF <ls_diff>-type <> 'binary'.
-      IF <ls_diff>-fstate = c_fstate-remote. " Remote file leading changes
-        CREATE OBJECT <ls_diff>-o_diff
-          EXPORTING
-            iv_new = <ls_remote>-data
-            iv_old = <ls_local>-file-data.
-      ELSE.             " Local leading changes or both were modified
-        CREATE OBJECT <ls_diff>-o_diff
-          EXPORTING
-            iv_new = <ls_local>-file-data
-            iv_old = <ls_remote>-data.
-      ENDIF.
-    ENDIF.
-
-  ENDMETHOD.
 
 
   METHOD apply_patch_all.
@@ -478,22 +387,13 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
 
   METHOD render_content.
 
-    DATA: ls_diff_file LIKE LINE OF mt_diff_files,
-          li_progress  TYPE REF TO zif_abapgit_progress.
-
+    DATA: ls_diff_file LIKE LINE OF mt_diff_files.
 
     CREATE OBJECT ro_html.
-
     CLEAR: mv_section_count.
 
-    li_progress = zcl_abapgit_progress=>get_instance( lines( mt_diff_files ) ).
-
     ro_html->add( |<div id="diff-list" data-repo-key="REPO_KEY">| ).
-    ro_html->add( zcl_abapgit_gui_chunk_lib=>render_js_error_banner( ) ).
     LOOP AT mt_diff_files INTO ls_diff_file.
-      li_progress->show(
-        iv_current = sy-tabix
-        iv_text    = |Render Diff - { ls_diff_file-filename }| ).
 
       ro_html->add( render_diff( ls_diff_file ) ).
     ENDLOOP.
@@ -551,7 +451,7 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
     ENDIF.
 
     ro_html->add( |<span class="diff_name">{ is_diff-path }{ is_diff-filename }</span>| ). "#EC NOTEXT
-    ro_html->add( zcl_abapgit_gui_chunk_lib=>render_item_state(
+    ro_html->add( render_item_state(
       iv_lstate = is_diff-lstate
       iv_rstate = is_diff-rstate ) ).
 
@@ -582,14 +482,12 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
 
   METHOD render_lines.
 
-    DATA: lo_highlighter TYPE REF TO zcl_abapgit_syntax_highlighter,
-          lt_diffs       TYPE zif_cts_definitions=>ty_diffs_tt,
+    DATA: lt_diffs       TYPE zif_cts_definitions=>ty_diffs_tt,
           lv_insert_nav  TYPE abap_bool,
           lv_tabix       TYPE syst-tabix.
 
     FIELD-SYMBOLS <ls_diff>  LIKE LINE OF lt_diffs.
 
-    lo_highlighter = zcl_abapgit_syntax_highlighter=>create( is_diff-filename ).
     CREATE OBJECT ro_html.
 
     lt_diffs = is_diff-o_diff->get( ).
@@ -608,13 +506,8 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
         lv_insert_nav = abap_false.
       ENDIF.
 
-      IF lo_highlighter IS BOUND.
-        <ls_diff>-new = lo_highlighter->process_line( <ls_diff>-new ).
-        <ls_diff>-old = lo_highlighter->process_line( <ls_diff>-old ).
-      ELSE.
-        <ls_diff>-new = escape( val = <ls_diff>-new format = cl_abap_format=>e_html_attr ).
-        <ls_diff>-old = escape( val = <ls_diff>-old format = cl_abap_format=>e_html_attr ).
-      ENDIF.
+      <ls_diff>-new = escape( val = <ls_diff>-new format = cl_abap_format=>e_html_attr ).
+      <ls_diff>-old = escape( val = <ls_diff>-old format = cl_abap_format=>e_html_attr ).
 
       CONDENSE <ls_diff>-new_num. "get rid of leading spaces
       CONDENSE <ls_diff>-old_num.
@@ -855,6 +748,47 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
     ro_html->add( '  toggleKey: "F2",' ).
     ro_html->add( '  hotkeyDescription: "Jump to file ..."' ).
     ro_html->add( '});' ).
+
+  ENDMETHOD.
+
+  METHOD render_item_state.
+
+    DATA: lv_system TYPE string.
+
+    FIELD-SYMBOLS <lv_state> TYPE char1.
+
+
+    rv_html = '<span class="state-block">'.
+
+    DO 2 TIMES.
+      CASE sy-index.
+        WHEN 1.
+          ASSIGN iv_lstate TO <lv_state>.
+          lv_system = 'Local:'.
+        WHEN 2.
+          ASSIGN iv_rstate TO <lv_state>.
+          lv_system = 'Remote:'.
+      ENDCASE.
+
+      CASE <lv_state>.
+        WHEN zif_cts_definitions=>c_state-unchanged.  "None or unchanged
+          IF iv_lstate = zif_cts_definitions=>c_state-added OR iv_rstate = zif_cts_definitions=>c_state-added.
+            rv_html = rv_html && |<span class="none" title="{ lv_system } Not exists">X</span>|.
+          ELSE.
+            rv_html = rv_html && |<span class="none" title="{ lv_system } No changes">&nbsp;</span>|.
+          ENDIF.
+        WHEN zif_cts_definitions=>c_state-modified.   "Changed
+          rv_html = rv_html && |<span class="changed" title="{ lv_system } Modified">M</span>|.
+        WHEN zif_cts_definitions=>c_state-added.      "Added new
+          rv_html = rv_html && |<span class="added" title="{ lv_system } Added new">A</span>|.
+        WHEN zif_cts_definitions=>c_state-mixed.      "Multiple changes (multifile)
+          rv_html = rv_html && |<span class="mixed" title="{ lv_system } Multiple changes">&#x25A0;</span>|.
+        WHEN zif_cts_definitions=>c_state-deleted.    "Deleted
+          rv_html = rv_html && |<span class="deleted" title="{ lv_system } Deleted">D</span>|.
+      ENDCASE.
+    ENDDO.
+
+    rv_html = rv_html && '</span>'.
 
   ENDMETHOD.
 

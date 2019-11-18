@@ -45,8 +45,6 @@ CLASS zcl_cts_compare_code DEFINITION
 
 
   PRIVATE SECTION.
-    DATA:   mx_error            TYPE REF TO zcx_cts_exception.
-
     TYPES: ty_patch_action TYPE string.
 
     CONSTANTS: BEGIN OF c_actions,
@@ -99,21 +97,8 @@ CLASS zcl_cts_compare_code DEFINITION
 
 
 
-    METHODS get_diff_object
-      IMPORTING
-        iv_filename    TYPE string
-      RETURNING
-        VALUE(ro_diff) TYPE REF TO zcl_cts_diff
-      RAISING
-        zcx_cts_exception.
-    METHODS get_diff_line
-      IMPORTING
-        io_diff        TYPE REF TO zcl_cts_diff
-        iv_line_index  TYPE string
-      RETURNING
-        VALUE(rs_diff) TYPE zif_cts_definitions=>ty_diff
-      RAISING
-        zcx_cts_exception.
+
+
 
 
     CLASS-METHODS render_item_state
@@ -156,42 +141,6 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
     super->constructor( ).
 
   ENDMETHOD.
-
-
-  METHOD get_diff_line.
-
-    DATA: lt_diff       TYPE zif_cts_definitions=>ty_diffs_tt,
-          lv_line_index TYPE sy-tabix.
-
-
-    lv_line_index = iv_line_index.
-    lt_diff = io_diff->get( ).
-
-    READ TABLE lt_diff INTO rs_diff
-                       INDEX lv_line_index.
-    IF sy-subrc <> 0.
-      zcx_cts_exception=>raise( |Invalid line index { lv_line_index }| ).
-    ENDIF.
-
-  ENDMETHOD.
-
-
-  METHOD get_diff_object.
-
-    FIELD-SYMBOLS: <ls_diff_file> LIKE LINE OF mt_diff_files.
-
-    READ TABLE mt_diff_files ASSIGNING <ls_diff_file>
-                             WITH KEY filename = iv_filename.
-    IF sy-subrc <> 0.
-      zcx_cts_exception=>raise( |Invalid filename { iv_filename }| ).
-    ENDIF.
-
-    ro_diff = <ls_diff_file>-o_diff.
-
-  ENDMETHOD.
-
-
-
 
 
   METHOD is_binary.
@@ -358,8 +307,6 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
 
 
   METHOD render_diff_public.
-    DATA: l_url_file1 TYPE string.
-
     DATA(lo_diff) = NEW zcl_cts_compare_code( ).
     lo_diff->mv_unified = abap_false.
 

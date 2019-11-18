@@ -1,4 +1,3 @@
-"! abapGit general error
 CLASS zcx_cts_exception DEFINITION
   PUBLIC
   INHERITING FROM cx_static_check
@@ -130,7 +129,7 @@ CLASS zcx_cts_exception IMPLEMENTATION.
       lv_text = iv_text.
     ENDIF.
 
-    CALL METHOD ('ZCL_ABAPGIT_CTS_HELPER')=>set_msg_vars_for_clike
+    CALL METHOD ('ZCL_CTS_MESSAGE_HELPER')=>set_msg_vars_for_clike
       EXPORTING
         iv_text = lv_text.
 

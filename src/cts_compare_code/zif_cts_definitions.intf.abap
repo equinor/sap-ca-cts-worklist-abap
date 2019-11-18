@@ -14,7 +14,7 @@ INTERFACE zif_cts_definitions
     BEGIN OF ty_file_signature,
       path     TYPE string,
       filename TYPE string,
-      sha1     TYPE zif_abapgit_definitions=>ty_sha1,
+      sha1     TYPE zif_cts_definitions=>ty_sha1,
     END OF ty_file_signature .
   TYPES:
     ty_file_signatures_tt TYPE STANDARD TABLE OF
@@ -31,12 +31,10 @@ INTERFACE zif_cts_definitions
     ty_files_tt TYPE STANDARD TABLE OF ty_file WITH DEFAULT KEY .
   TYPES:
     ty_string_tt TYPE STANDARD TABLE OF string WITH DEFAULT KEY .
-  TYPES:
-    ty_repo_ref_tt TYPE STANDARD TABLE OF REF TO zcl_abapgit_repo WITH DEFAULT KEY .
   TYPES ty_git_branch_type TYPE char2 .
   TYPES:
     BEGIN OF ty_git_branch,
-      sha1         TYPE zif_abapgit_definitions=>ty_sha1,
+      sha1         TYPE zif_cts_definitions=>ty_sha1,
       name         TYPE string,
       type         TYPE ty_git_branch_type,
       is_head      TYPE abap_bool,
@@ -46,8 +44,8 @@ INTERFACE zif_cts_definitions
     ty_git_branch_list_tt TYPE STANDARD TABLE OF ty_git_branch WITH DEFAULT KEY .
   TYPES:
     BEGIN OF ty_git_tag,
-      sha1         TYPE zif_abapgit_definitions=>ty_sha1,
-      object       TYPE zif_abapgit_definitions=>ty_sha1,
+      sha1         TYPE zif_cts_definitions=>ty_sha1,
+      object       TYPE zif_cts_definitions=>ty_sha1,
       name         TYPE string,
       type         TYPE ty_git_branch_type,
       display_name TYPE string,
@@ -92,7 +90,7 @@ INTERFACE zif_cts_definitions
     ty_items_ts TYPE SORTED TABLE OF ty_item WITH UNIQUE KEY obj_type obj_name .
   TYPES:
     BEGIN OF ty_file_item,
-      file TYPE zif_abapgit_definitions=>ty_file,
+      file TYPE zif_cts_definitions=>ty_file,
       item TYPE ty_item,
     END OF ty_file_item .
   TYPES:
@@ -155,15 +153,15 @@ INTERFACE zif_cts_definitions
     tt_repo_files TYPE STANDARD TABLE OF ty_repo_file WITH DEFAULT KEY .
   TYPES:
     BEGIN OF ty_stage_files,
-      local  TYPE zif_abapgit_definitions=>ty_files_item_tt,
-      remote TYPE zif_abapgit_definitions=>ty_files_tt,
+      local  TYPE zif_cts_definitions=>ty_files_item_tt,
+      remote TYPE zif_cts_definitions=>ty_files_tt,
     END OF ty_stage_files .
   TYPES:
     ty_chmod TYPE c LENGTH 6 .
   TYPES:
     BEGIN OF ty_object,
-      sha1    TYPE zif_abapgit_definitions=>ty_sha1,
-      type    TYPE zif_abapgit_definitions=>ty_type,
+      sha1    TYPE zif_cts_definitions=>ty_sha1,
+      type    TYPE zif_cts_definitions=>ty_type,
       data    TYPE xstring,
       adler32 TYPE ty_adler32,
       index   TYPE i,
@@ -290,27 +288,14 @@ INTERFACE zif_cts_definitions
       body   TYPE string,
     END OF ty_ancestor .
   TYPES:
-    BEGIN OF ty_merge,
-      repo     TYPE REF TO zcl_abapgit_repo_online,
-      source   TYPE ty_git_branch,
-      target   TYPE ty_git_branch,
-      common   TYPE ty_ancestor,
-      stree    TYPE ty_expanded_tt,
-      ttree    TYPE ty_expanded_tt,
-      ctree    TYPE ty_expanded_tt,
-      result   TYPE ty_expanded_tt,
-      stage    TYPE REF TO zcl_abapgit_stage,
-      conflict TYPE string,
-    END OF ty_merge .
-  TYPES:
     BEGIN OF ty_merge_conflict,
       path        TYPE string,
       filename    TYPE string,
-      source_sha1 TYPE zif_abapgit_definitions=>ty_sha1,
+      source_sha1 TYPE zif_cts_definitions=>ty_sha1,
       source_data TYPE xstring,
-      target_sha1 TYPE zif_abapgit_definitions=>ty_sha1,
+      target_sha1 TYPE zif_cts_definitions=>ty_sha1,
       target_data TYPE xstring,
-      result_sha1 TYPE zif_abapgit_definitions=>ty_sha1,
+      result_sha1 TYPE zif_cts_definitions=>ty_sha1,
       result_data TYPE xstring,
     END OF ty_merge_conflict .
   TYPES:
@@ -366,11 +351,11 @@ INTERFACE zif_cts_definitions
     END OF c_diff .
   CONSTANTS:
     BEGIN OF c_type,
-      commit TYPE zif_abapgit_definitions=>ty_type VALUE 'commit', "#EC NOTEXT
-      tree   TYPE zif_abapgit_definitions=>ty_type VALUE 'tree', "#EC NOTEXT
-      ref_d  TYPE zif_abapgit_definitions=>ty_type VALUE 'ref_d', "#EC NOTEXT
-      tag    TYPE zif_abapgit_definitions=>ty_type VALUE 'tag', "#EC NOTEXT
-      blob   TYPE zif_abapgit_definitions=>ty_type VALUE 'blob', "#EC NOTEXT
+      commit TYPE zif_cts_definitions=>ty_type VALUE 'commit', "#EC NOTEXT
+      tree   TYPE zif_cts_definitions=>ty_type VALUE 'tree', "#EC NOTEXT
+      ref_d  TYPE zif_cts_definitions=>ty_type VALUE 'ref_d', "#EC NOTEXT
+      tag    TYPE zif_cts_definitions=>ty_type VALUE 'tag', "#EC NOTEXT
+      blob   TYPE zif_cts_definitions=>ty_type VALUE 'blob', "#EC NOTEXT
     END OF c_type .
   CONSTANTS:
     BEGIN OF c_state, " https://git-scm.com/docs/git-status
@@ -410,7 +395,7 @@ INTERFACE zif_cts_definitions
       repo_code_inspector      TYPE string VALUE 'repo_code_inspector',
       repo_open_in_master_lang TYPE string VALUE 'repo_open_in_master_lang',
       repo_log                 TYPE string VALUE 'repo_log',
-      abapgit_home             TYPE string VALUE 'abapgit_home',
+      abapgit_home             TYPE string VALUE 'zif_cts_definitions_home',
       abapgit_install          TYPE string VALUE 'abapgit_install',
       zip_import               TYPE string VALUE 'zip_import',
       zip_export               TYPE string VALUE 'zip_export',

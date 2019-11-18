@@ -1,50 +1,67 @@
-class ZCL_CTS_COMPARE_CODE definition
-  public
-  inheriting from ZCL_ABAPGIT_GUI_PAGE
-  final
-  create public .
+CLASS zcl_cts_compare_code DEFINITION
+  PUBLIC
+*fs  inheriting from ZCL_ABAPGIT_GUI_PAGE
+  FINAL
+  CREATE PUBLIC .
 
-public section.
+  PUBLIC SECTION.
 
-  interfaces ZIF_ABAPGIT_GUI_PAGE_HOTKEY .
+*    INTERFACES zif_abapgit_gui_page_hotkey .
 
-  types:
-    BEGIN OF ty_file_diff,
+    TYPES:
+      BEGIN OF ty_file_diff,
         path       TYPE string,
         filename   TYPE string,
         lstate     TYPE char1,
         rstate     TYPE char1,
         fstate     TYPE char1, " FILE state - Abstraction for shorter ifs
-        o_diff     TYPE REF TO zcl_abapgit_diff,
+        o_diff     TYPE REF TO zcl_cts_diff,
         changed_by TYPE xubname,
         type       TYPE string,
       END OF ty_file_diff .
-  types:
-    tt_file_diff TYPE STANDARD TABLE OF ty_file_diff .
+    TYPES:
+      tt_file_diff TYPE STANDARD TABLE OF ty_file_diff .
 
-  constants:
-    BEGIN OF c_fstate,
+    CONSTANTS:
+      BEGIN OF c_fstate,
         local  TYPE char1 VALUE 'L',
         remote TYPE char1 VALUE 'R',
         both   TYPE char1 VALUE 'B',
       END OF c_fstate .
 
-  methods CONSTRUCTOR .
-  class-methods RENDER_DIFF_PUBLIC
-    importing
-      !IS_DIFF type zcl_abapgit_gui_page_diff=>ty_file_diff
-    returning
-      value(RO_HTML) type ref to ZCL_ABAPGIT_HTML .
+    METHODS constructor .
+    CLASS-METHODS render_diff_public
+      IMPORTING
+        !is_diff       TYPE zcl_cts_compare_code=>ty_file_diff
+      RETURNING
+        VALUE(ro_html) TYPE REF TO zcl_cts_html .
 
-  methods ZIF_ABAPGIT_GUI_EVENT_HANDLER~ON_EVENT
-    redefinition .
-protected section.
+*fs  methods ZIF_ABAPGIT_GUI_EVENT_HANDLER~ON_EVENT
+*fs    redefinition .
+  PROTECTED SECTION.
 
-  methods RENDER_CONTENT
-    redefinition .
-  methods SCRIPTS
-    redefinition .
+    METHODS render_content
+      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html
+      RAISING   zcx_abapgit_exception.
+
+    METHODS scripts
+      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html
+      RAISING   zcx_abapgit_exception.
+
+    METHODS s_scripts
+      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html
+      RAISING   zcx_abapgit_exception.
+
+*fs  methods RENDER_CONTENT
+*fs    redefinition .
+*fs  methods SCRIPTS
+*fs    redefinition .
   PRIVATE SECTION.
+    DATA: mo_settings         TYPE REF TO zcl_abapgit_settings,
+          mt_hotkeys          TYPE zif_abapgit_gui_page_hotkey=>tty_hotkey_with_name,
+          mx_error            TYPE REF TO zcx_abapgit_exception,
+          mo_exception_viewer TYPE REF TO zcl_abapgit_exception_viewer.
+
     TYPES: ty_patch_action TYPE string.
 
     CONSTANTS: BEGIN OF c_actions,
@@ -67,36 +84,36 @@ protected section.
 
     METHODS render_diff
       IMPORTING is_diff        TYPE ty_file_diff
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
+      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
     METHODS render_diff_head
       IMPORTING is_diff        TYPE ty_file_diff
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
+      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
     METHODS render_table_head
       IMPORTING is_diff        TYPE ty_file_diff
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
+      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
     METHODS render_lines
       IMPORTING is_diff        TYPE ty_file_diff
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
+      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
     METHODS render_beacon
       IMPORTING is_diff_line   TYPE zif_abapgit_definitions=>ty_diff
                 is_diff        TYPE ty_file_diff
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
+      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
     METHODS render_line_split
       IMPORTING is_diff_line   TYPE zif_abapgit_definitions=>ty_diff
                 iv_filename    TYPE string
                 iv_fstate      TYPE char1
                 iv_index       TYPE sy-tabix
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
+      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
     METHODS render_line_unified
       IMPORTING is_diff_line   TYPE zif_abapgit_definitions=>ty_diff OPTIONAL
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
+      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
     METHODS append_diff
       IMPORTING it_remote TYPE zif_abapgit_definitions=>ty_files_tt
                 it_local  TYPE zif_abapgit_definitions=>ty_files_item_tt
                 is_status TYPE zif_abapgit_definitions=>ty_result
       RAISING   zcx_abapgit_exception.
-    METHODS build_menu
-      RETURNING VALUE(ro_menu) TYPE REF TO zcl_abapgit_html_toolbar.
+*    METHODS build_menu
+*      RETURNING VALUE(ro_menu) TYPE REF TO zcl_cts_html_toolbar.
     METHODS is_binary
       IMPORTING iv_d1         TYPE xstring
                 iv_d2         TYPE xstring
@@ -106,16 +123,11 @@ protected section.
         zcx_abapgit_exception.
     METHODS render_patch
       IMPORTING
-        io_html                TYPE REF TO zcl_abapgit_html
+        io_html                TYPE REF TO zcl_cts_html
         iv_patch_line_possible TYPE abap_bool
         iv_filename            TYPE string
         is_diff_line           TYPE zif_abapgit_definitions=>ty_diff
         iv_index               TYPE sy-tabix.
-    METHODS start_staging
-      IMPORTING
-        it_postdata TYPE cnht_post_data_tab
-      RAISING
-        zcx_abapgit_exception.
     METHODS apply_patch_all
       IMPORTING
         iv_patch      TYPE string
@@ -124,8 +136,8 @@ protected section.
         zcx_abapgit_exception.
     METHODS render_patch_head
       IMPORTING
-        io_html TYPE REF TO zcl_abapgit_html
-        is_diff TYPE zcl_abapgit_gui_page_diff=>ty_file_diff.
+        io_html TYPE REF TO zcl_cts_html
+        is_diff TYPE zcl_cts_compare_code=>ty_file_diff.
     METHODS apply_patch_for
       IMPORTING
         iv_filename   TYPE string
@@ -137,12 +149,12 @@ protected section.
       IMPORTING
         iv_filename    TYPE string
       RETURNING
-        VALUE(ro_diff) TYPE REF TO zcl_abapgit_diff
+        VALUE(ro_diff) TYPE REF TO zcl_cts_diff
       RAISING
         zcx_abapgit_exception.
     METHODS get_diff_line
       IMPORTING
-        io_diff        TYPE REF TO zcl_abapgit_diff
+        io_diff        TYPE REF TO zcl_cts_diff
         iv_line_index  TYPE string
       RETURNING
         VALUE(rs_diff) TYPE zif_abapgit_definitions=>ty_diff
@@ -153,12 +165,12 @@ protected section.
         it_diff                         TYPE zif_abapgit_definitions=>ty_diffs_tt
       RETURNING
         VALUE(rv_are_all_lines_patched) TYPE abap_bool.
-    METHODS add_jump_sub_menu
-      IMPORTING
-        io_menu TYPE REF TO zcl_abapgit_html_toolbar.
-    METHODS add_filter_sub_menu
-      IMPORTING
-        io_menu TYPE REF TO zcl_abapgit_html_toolbar.
+*    METHODS add_jump_sub_menu
+*      IMPORTING
+*        io_menu TYPE REF TO zcl_cts_html_toolbar.
+*    METHODS add_filter_sub_menu
+*      IMPORTING
+*        io_menu TYPE REF TO zcl_cts_html_toolbar.
     CLASS-METHODS get_patch_data
       IMPORTING
         iv_patch      TYPE string
@@ -167,83 +179,26 @@ protected section.
         ev_line_index TYPE string
       RAISING
         zcx_abapgit_exception.
+
+*FS
+    METHODS link_hints
+      IMPORTING
+        io_html TYPE REF TO zcl_cts_html
+      RAISING
+        zcx_abapgit_exception.
+
+    METHODS insert_hotkeys_to_page
+      IMPORTING
+        io_html TYPE REF TO zcl_cts_html
+      RAISING
+        zcx_abapgit_exception.
+
 ENDCLASS.
 
 
 
-CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
+CLASS zcl_cts_compare_code IMPLEMENTATION.
 
-
-  METHOD add_filter_sub_menu.
-
-    DATA:
-      lo_sub_filter TYPE REF TO zcl_abapgit_html_toolbar,
-      lt_types      TYPE string_table,
-      lt_users      TYPE string_table.
-
-    FIELD-SYMBOLS: <ls_diff> LIKE LINE OF mt_diff_files,
-                   <lv_i>    TYPE string.
-    " Get unique
-    LOOP AT mt_diff_files ASSIGNING <ls_diff>.
-      APPEND <ls_diff>-type TO lt_types.
-      APPEND <ls_diff>-changed_by TO lt_users.
-    ENDLOOP.
-
-    SORT: lt_types, lt_users.
-    DELETE ADJACENT DUPLICATES FROM: lt_types, lt_users.
-
-    IF lines( lt_types ) > 1 OR lines( lt_users ) > 1.
-      CREATE OBJECT lo_sub_filter EXPORTING iv_id = 'diff-filter'.
-
-      " File types
-      IF lines( lt_types ) > 1.
-        lo_sub_filter->add( iv_txt = 'TYPE' iv_typ = zif_abapgit_html=>c_action_type-separator ).
-        LOOP AT lt_types ASSIGNING <lv_i>.
-          lo_sub_filter->add( iv_txt = <lv_i>
-                       iv_typ = zif_abapgit_html=>c_action_type-onclick
-                       iv_aux = 'type'
-                       iv_chk = abap_true ).
-        ENDLOOP.
-      ENDIF.
-
-      " Changed by
-      IF lines( lt_users ) > 1.
-        lo_sub_filter->add( iv_txt = 'CHANGED BY' iv_typ = zif_abapgit_html=>c_action_type-separator ).
-        LOOP AT lt_users ASSIGNING <lv_i>.
-          lo_sub_filter->add( iv_txt = <lv_i>
-                       iv_typ = zif_abapgit_html=>c_action_type-onclick
-                       iv_aux = 'changed-by'
-                       iv_chk = abap_true ).
-        ENDLOOP.
-      ENDIF.
-
-      io_menu->add( iv_txt = 'Filter'
-                    io_sub = lo_sub_filter ) ##NO_TEXT.
-    ENDIF.
-
-  ENDMETHOD.
-
-
-  METHOD add_jump_sub_menu.
-
-    DATA: lo_sub_jump TYPE REF TO zcl_abapgit_html_toolbar.
-    FIELD-SYMBOLS: <ls_diff> LIKE LINE OF mt_diff_files.
-
-    CREATE OBJECT lo_sub_jump EXPORTING iv_id = 'jump'.
-
-    LOOP AT mt_diff_files ASSIGNING <ls_diff>.
-
-      lo_sub_jump->add(
-          iv_id  = |li_jump_{ sy-tabix }|
-          iv_txt = <ls_diff>-filename
-          iv_typ = zif_abapgit_html=>c_action_type-onclick ).
-
-    ENDLOOP.
-
-    io_menu->add( iv_txt = 'Jump'
-                  io_sub = lo_sub_jump ) ##NO_TEXT.
-
-  ENDMETHOD.
 
 
   METHOD add_to_stage.
@@ -254,7 +209,7 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
           lv_patch             TYPE xstring,
           lo_git_add_patch     TYPE REF TO zcl_abapgit_git_add_patch.
 
-    FIELD-SYMBOLS: <ls_diff_file> TYPE zcl_abapgit_gui_page_diff=>ty_file_diff.
+    FIELD-SYMBOLS: <ls_diff_file> TYPE zcl_cts_compare_code=>ty_file_diff.
 
     lo_repo ?= zcl_abapgit_repo_srv=>get_instance( )->get( mv_repo_key ).
 
@@ -420,8 +375,8 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
 
   METHOD apply_patch_for.
 
-    DATA: lo_diff      TYPE REF TO zcl_abapgit_diff,
-          ls_diff_line TYPE zif_abapgit_definitions=>ty_diff,
+    DATA: lo_diff      TYPE REF TO zcl_cts_diff,
+          ls_diff_line TYPE zif_cts_definitions=>ty_diff,
           lv_line      TYPE i.
 
     lo_diff = get_diff_object( iv_filename ).
@@ -466,26 +421,7 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD build_menu.
 
-    CREATE OBJECT ro_menu.
-
-    add_jump_sub_menu( ro_menu ).
-    add_filter_sub_menu( ro_menu ).
-
-    IF mv_patch_mode = abap_true.
-      ro_menu->add( iv_txt = 'Stage'
-                    iv_act = c_actions-stage
-                    iv_id  = 'stage'
-                    iv_typ = zif_abapgit_html=>c_action_type-dummy
-                     ) ##NO_TEXT.
-    ELSE.
-      ro_menu->add( iv_txt = 'Split/Unified view'
-                    iv_act = c_actions-toggle_unified ) ##NO_TEXT.
-    ENDIF.
-
-
-  ENDMETHOD.
 
 
   METHOD constructor.
@@ -722,10 +658,10 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD RENDER_DIFF_PUBLIC.
+  METHOD render_diff_public.
     DATA: l_url_file1 TYPE string.
 
-    DATA(lo_diff) = new zcl_cts_compare_code( ).
+    DATA(lo_diff) = NEW zcl_cts_compare_code( ).
     lo_diff->mv_unified = abap_false.
 
     ro_html = lo_diff->render_diff( is_diff ).
@@ -987,7 +923,8 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
 
   METHOD scripts.
 
-    ro_html = super->scripts( ).
+*fs    ro_html = super->scripts( ).
+    ro_html = s_scripts( ).
 
     ro_html->add( 'var gHelper = new DiffHelper({' ).
     ro_html->add( |  seed:        "{ mv_seed }",| ).
@@ -1013,60 +950,68 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD start_staging.
 
-    DATA: lv_string TYPE string,
-          lt_fields TYPE tihttpnvp,
-          lv_add    TYPE string,
-          lv_remove TYPE string.
 
-    CONCATENATE LINES OF it_postdata INTO lv_string.
-    lt_fields = zcl_abapgit_html_action_utils=>parse_fields( lv_string ).
+  METHOD s_scripts.
 
-    zcl_abapgit_html_action_utils=>get_field( EXPORTING iv_name  = c_patch_action-add
-                                                        it_field = lt_fields
-                                              CHANGING  cg_field = lv_add ).
+    CREATE OBJECT ro_html.
 
-    zcl_abapgit_html_action_utils=>get_field( EXPORTING iv_name  = c_patch_action-remove
-                                                        it_field = lt_fields
-                                              CHANGING  cg_field = lv_remove ).
+    link_hints( ro_html ).
+    insert_hotkeys_to_page( ro_html ).
 
-    apply_patch_all( iv_patch      = lv_add
-                     iv_patch_flag = abap_true ).
+    ro_html->add( 'var gGoRepoPalette = new CommandPalette(enumerateTocAllRepos, {' ).
+    ro_html->add( '  toggleKey: "F2",' ).
+    ro_html->add( '  hotkeyDescription: "Go to repo ..."' ).
+    ro_html->add( '});' ).
 
-    apply_patch_all( iv_patch      = lv_remove
-                     iv_patch_flag = abap_false ).
+    ro_html->add( 'var gCommandPalette = new CommandPalette(enumerateToolbarActions, {' ).
+    ro_html->add( '  toggleKey: "F1",' ).
+    ro_html->add( '  hotkeyDescription: "Command ..."' ).
+    ro_html->add( '});' ).
 
-    add_to_stage( ).
+  ENDMETHOD.
+
+  METHOD insert_hotkeys_to_page.
+
+    DATA: lv_json TYPE string.
+
+    FIELD-SYMBOLS: <ls_hotkey> LIKE LINE OF mt_hotkeys.
+
+    lv_json = `{`.
+
+    LOOP AT mt_hotkeys ASSIGNING <ls_hotkey>.
+
+      IF sy-tabix > 1.
+        lv_json = lv_json && |,|.
+      ENDIF.
+
+      lv_json = lv_json && |  "{ <ls_hotkey>-hotkey }" : "{ <ls_hotkey>-action }" |.
+
+    ENDLOOP.
+
+    lv_json = lv_json && `}`.
+
+    io_html->add( |setKeyBindings({ lv_json });| ).
 
   ENDMETHOD.
 
 
-  METHOD zif_abapgit_gui_page_hotkey~get_hotkey_actions.
+  METHOD link_hints.
 
-    DATA: ls_hotkey_action LIKE LINE OF rt_hotkey_actions.
+    DATA: lv_link_hint_key    TYPE char01,
+          lv_background_color TYPE string.
 
-    ls_hotkey_action-name   = |Stage changes|.
-    ls_hotkey_action-action = |stagePatch|.
-    ls_hotkey_action-hotkey = |s|.
-    INSERT ls_hotkey_action INTO TABLE rt_hotkey_actions.
+    lv_link_hint_key = mo_settings->get_link_hint_key( ).
+
+    IF mo_settings->get_link_hints_enabled( ) = abap_true AND lv_link_hint_key IS NOT INITIAL.
+
+      io_html->add( |activateLinkHints("{ lv_link_hint_key }");| ).
+      io_html->add( |setInitialFocusWithQuerySelector('a span', true);| ).
+      io_html->add( |enableArrowListNavigation();| ).
+
+    ENDIF.
 
   ENDMETHOD.
 
 
-  method ZIF_ABAPGIT_GUI_EVENT_HANDLer~ON_EVENT.
-**TRY.
-*CALL METHOD SUPER->ZIF_ABAPGIT_GUI_EVENT_HANDLER~ON_EVENT
-*  EXPORTING
-*    IV_ACTION    =
-*    IV_PREV_PAGE =
-**    iv_getdata   =
-**    it_postdata  =
-**  IMPORTING
-**    ei_page      =
-**    ev_state     =
-*    .
-** CATCH zcx_abapgit_exception .
-**ENDTRY.
-  endmethod.
 ENDCLASS.

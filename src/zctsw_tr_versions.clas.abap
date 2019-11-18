@@ -63,8 +63,8 @@ CLASS ZCTSW_TR_VERSIONS IMPLEMENTATION.
 * CHGxxxxxxx ADKRA\774888 04.10.2019 Method created
 *-----------------------------------------------------------------------
 
-    DATA: ls_page_difference TYPE  zcl_abapgit_gui_page_diff=>ty_file_diff,
-          ls_file2           TYPE  zcl_abapgit_gui_page_diff=>ty_file_diff.
+    DATA: ls_page_difference TYPE  zcl_cts_compare_code=>ty_file_diff,
+          ls_file2           TYPE  zcl_cts_compare_code=>ty_file_diff.
 
 
     CREATE OBJECT ls_page_difference-o_diff

@@ -1,12 +1,9 @@
 CLASS zcl_cts_compare_code DEFINITION
   PUBLIC
-*fs  inheriting from ZCL_ABAPGIT_GUI_PAGE
   FINAL
   CREATE PUBLIC .
 
   PUBLIC SECTION.
-
-*    INTERFACES zif_abapgit_gui_page_hotkey .
 
     TYPES:
       BEGIN OF ty_file_diff,
@@ -36,31 +33,19 @@ CLASS zcl_cts_compare_code DEFINITION
       RETURNING
         VALUE(ro_html) TYPE REF TO zcl_cts_html .
 
-*fs  methods ZIF_ABAPGIT_GUI_EVENT_HANDLER~ON_EVENT
-*fs    redefinition .
   PROTECTED SECTION.
 
     METHODS render_content
       RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html
-      RAISING   zcx_abapgit_exception.
+      RAISING   zcx_cts_exception.
 
     METHODS scripts
       RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html
-      RAISING   zcx_abapgit_exception.
+      RAISING   zcx_cts_exception.
 
-    METHODS s_scripts
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html
-      RAISING   zcx_abapgit_exception.
 
-*fs  methods RENDER_CONTENT
-*fs    redefinition .
-*fs  methods SCRIPTS
-*fs    redefinition .
   PRIVATE SECTION.
-    DATA: mo_settings         TYPE REF TO zcl_abapgit_settings,
-          mt_hotkeys          TYPE zif_abapgit_gui_page_hotkey=>tty_hotkey_with_name,
-          mx_error            TYPE REF TO zcx_abapgit_exception,
-          mo_exception_viewer TYPE REF TO zcl_abapgit_exception_viewer.
+    data:   mx_error            TYPE REF TO zcx_cts_exception.
 
     TYPES: ty_patch_action TYPE string.
 
@@ -111,7 +96,7 @@ CLASS zcl_cts_compare_code DEFINITION
       IMPORTING it_remote TYPE zif_abapgit_definitions=>ty_files_tt
                 it_local  TYPE zif_abapgit_definitions=>ty_files_item_tt
                 is_status TYPE zif_abapgit_definitions=>ty_result
-      RAISING   zcx_abapgit_exception.
+      RAISING   zcx_cts_exception.
 *    METHODS build_menu
 *      RETURNING VALUE(ro_menu) TYPE REF TO zcl_cts_html_toolbar.
     METHODS is_binary
@@ -120,7 +105,7 @@ CLASS zcl_cts_compare_code DEFINITION
       RETURNING VALUE(rv_yes) TYPE abap_bool.
     METHODS add_to_stage
       RAISING
-        zcx_abapgit_exception.
+        zcx_cts_exception.
     METHODS render_patch
       IMPORTING
         io_html                TYPE REF TO zcl_cts_html
@@ -133,7 +118,7 @@ CLASS zcl_cts_compare_code DEFINITION
         iv_patch      TYPE string
         iv_patch_flag TYPE abap_bool
       RAISING
-        zcx_abapgit_exception.
+        zcx_cts_exception.
     METHODS render_patch_head
       IMPORTING
         io_html TYPE REF TO zcl_cts_html
@@ -144,14 +129,14 @@ CLASS zcl_cts_compare_code DEFINITION
         iv_line_index TYPE string
         iv_patch_flag TYPE abap_bool
       RAISING
-        zcx_abapgit_exception.
+        zcx_cts_exception.
     METHODS get_diff_object
       IMPORTING
         iv_filename    TYPE string
       RETURNING
         VALUE(ro_diff) TYPE REF TO zcl_cts_diff
       RAISING
-        zcx_abapgit_exception.
+        zcx_cts_exception.
     METHODS get_diff_line
       IMPORTING
         io_diff        TYPE REF TO zcl_cts_diff
@@ -159,7 +144,7 @@ CLASS zcl_cts_compare_code DEFINITION
       RETURNING
         VALUE(rs_diff) TYPE zif_abapgit_definitions=>ty_diff
       RAISING
-        zcx_abapgit_exception.
+        zcx_cts_exception.
     METHODS are_all_lines_patched
       IMPORTING
         it_diff                         TYPE zif_abapgit_definitions=>ty_diffs_tt
@@ -178,20 +163,7 @@ CLASS zcl_cts_compare_code DEFINITION
         ev_filename   TYPE string
         ev_line_index TYPE string
       RAISING
-        zcx_abapgit_exception.
-
-*FS
-    METHODS link_hints
-      IMPORTING
-        io_html TYPE REF TO zcl_cts_html
-      RAISING
-        zcx_abapgit_exception.
-
-    METHODS insert_hotkeys_to_page
-      IMPORTING
-        io_html TYPE REF TO zcl_cts_html
-      RAISING
-        zcx_abapgit_exception.
+        zcx_cts_exception.
 
 ENDCLASS.
 
@@ -254,7 +226,7 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
     ENDLOOP.
 
     IF lv_something_patched = abap_false.
-      zcx_abapgit_exception=>raise( |Nothing added| ).
+      zcx_cts_exception=>raise( |Nothing added| ).
     ENDIF.
 
   ENDMETHOD.
@@ -287,7 +259,7 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
     ENDIF.
 
     IF <ls_local> IS INITIAL AND <ls_remote> IS INITIAL.
-      zcx_abapgit_exception=>raise( |DIFF: file not found { is_status-filename }| ).
+      zcx_cts_exception=>raise( |DIFF: file not found { is_status-filename }| ).
     ENDIF.
 
     APPEND INITIAL LINE TO mt_diff_files ASSIGNING <ls_diff>.
@@ -449,7 +421,7 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
     READ TABLE lt_diff INTO rs_diff
                        INDEX lv_line_index.
     IF sy-subrc <> 0.
-      zcx_abapgit_exception=>raise( |Invalid line index { lv_line_index }| ).
+      zcx_cts_exception=>raise( |Invalid line index { lv_line_index }| ).
     ENDIF.
 
   ENDMETHOD.
@@ -462,7 +434,7 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
     READ TABLE mt_diff_files ASSIGNING <ls_diff_file>
                              WITH KEY filename = iv_filename.
     IF sy-subrc <> 0.
-      zcx_abapgit_exception=>raise( |Invalid filename { iv_filename }| ).
+      zcx_cts_exception=>raise( |Invalid filename { iv_filename }| ).
     ENDIF.
 
     ro_diff = <ls_diff_file>-o_diff.
@@ -480,7 +452,7 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
          IN iv_patch
          SUBMATCHES ev_filename lv_section ev_line_index.
     IF sy-subrc <> 0.
-      zcx_abapgit_exception=>raise( |Invalid patch| ).
+      zcx_cts_exception=>raise( |Invalid patch| ).
     ENDIF.
 
   ENDMETHOD.
@@ -924,7 +896,6 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
   METHOD scripts.
 
 *fs    ro_html = super->scripts( ).
-    ro_html = s_scripts( ).
 
     ro_html->add( 'var gHelper = new DiffHelper({' ).
     ro_html->add( |  seed:        "{ mv_seed }",| ).
@@ -950,68 +921,6 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
   ENDMETHOD.
 
 
-
-
-  METHOD s_scripts.
-
-    CREATE OBJECT ro_html.
-
-    link_hints( ro_html ).
-    insert_hotkeys_to_page( ro_html ).
-
-    ro_html->add( 'var gGoRepoPalette = new CommandPalette(enumerateTocAllRepos, {' ).
-    ro_html->add( '  toggleKey: "F2",' ).
-    ro_html->add( '  hotkeyDescription: "Go to repo ..."' ).
-    ro_html->add( '});' ).
-
-    ro_html->add( 'var gCommandPalette = new CommandPalette(enumerateToolbarActions, {' ).
-    ro_html->add( '  toggleKey: "F1",' ).
-    ro_html->add( '  hotkeyDescription: "Command ..."' ).
-    ro_html->add( '});' ).
-
-  ENDMETHOD.
-
-  METHOD insert_hotkeys_to_page.
-
-    DATA: lv_json TYPE string.
-
-    FIELD-SYMBOLS: <ls_hotkey> LIKE LINE OF mt_hotkeys.
-
-    lv_json = `{`.
-
-    LOOP AT mt_hotkeys ASSIGNING <ls_hotkey>.
-
-      IF sy-tabix > 1.
-        lv_json = lv_json && |,|.
-      ENDIF.
-
-      lv_json = lv_json && |  "{ <ls_hotkey>-hotkey }" : "{ <ls_hotkey>-action }" |.
-
-    ENDLOOP.
-
-    lv_json = lv_json && `}`.
-
-    io_html->add( |setKeyBindings({ lv_json });| ).
-
-  ENDMETHOD.
-
-
-  METHOD link_hints.
-
-    DATA: lv_link_hint_key    TYPE char01,
-          lv_background_color TYPE string.
-
-    lv_link_hint_key = mo_settings->get_link_hint_key( ).
-
-    IF mo_settings->get_link_hints_enabled( ) = abap_true AND lv_link_hint_key IS NOT INITIAL.
-
-      io_html->add( |activateLinkHints("{ lv_link_hint_key }");| ).
-      io_html->add( |setInitialFocusWithQuerySelector('a span', true);| ).
-      io_html->add( |enableArrowListNavigation();| ).
-
-    ENDIF.
-
-  ENDMETHOD.
 
 
 ENDCLASS.

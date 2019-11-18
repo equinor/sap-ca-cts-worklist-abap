@@ -35,13 +35,9 @@ CLASS zcl_cts_compare_code DEFINITION
 
   PROTECTED SECTION.
 
-    METHODS render_content
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html
-      RAISING   zcx_cts_exception.
 
-    METHODS scripts
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html
-      RAISING   zcx_cts_exception.
+
+
 
 
   PRIVATE SECTION.
@@ -56,10 +52,8 @@ CLASS zcl_cts_compare_code DEFINITION
                  remove TYPE ty_patch_action VALUE 'remove',
                END OF c_patch_action.
 
-    DATA: mt_diff_files    TYPE tt_file_diff,
-          mt_delayed_lines TYPE zif_cts_definitions=>ty_diffs_tt,
+    DATA: mt_delayed_lines TYPE zif_cts_definitions=>ty_diffs_tt,
           mv_unified       TYPE abap_bool VALUE abap_true,
-          mv_seed          TYPE string, " Unique page id to bind JS sessionStorage
           mv_patch_mode    TYPE abap_bool,
           mv_section_count TYPE i.
 
@@ -89,10 +83,7 @@ CLASS zcl_cts_compare_code DEFINITION
       IMPORTING is_diff_line   TYPE zif_cts_definitions=>ty_diff OPTIONAL
       RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
 
-    METHODS is_binary
-      IMPORTING iv_d1         TYPE xstring
-                iv_d2         TYPE xstring
-      RETURNING VALUE(rv_yes) TYPE abap_bool.
+
 
 
 
@@ -143,43 +134,7 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD is_binary.
 
-    DATA: lv_len TYPE i,
-          lv_idx TYPE i,
-          lv_x   TYPE x.
-
-    FIELD-SYMBOLS <lv_data> LIKE iv_d1.
-
-
-    IF iv_d1 IS NOT INITIAL. " One of them might be new and so empty
-      ASSIGN iv_d1 TO <lv_data>.
-    ELSE.
-      ASSIGN iv_d2 TO <lv_data>.
-    ENDIF.
-
-    lv_len = xstrlen( <lv_data> ).
-    IF lv_len = 0.
-      RETURN.
-    ENDIF.
-
-    IF lv_len > 100.
-      lv_len = 100.
-    ENDIF.
-
-    " Simple char range test
-    " stackoverflow.com/questions/277521/how-to-identify-the-file-content-as-ascii-or-binary
-    DO lv_len TIMES. " I'm sure there is more efficient way ...
-      lv_idx = sy-index - 1.
-      lv_x = <lv_data>+lv_idx(1).
-
-      IF NOT ( lv_x BETWEEN 9 AND 13 OR lv_x BETWEEN 32 AND 126 ).
-        rv_yes = abap_true.
-        EXIT.
-      ENDIF.
-    ENDDO.
-
-  ENDMETHOD.
 
 
   METHOD render_beacon.
@@ -219,23 +174,6 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
 
     ro_html->add( '</tr>' ).
     ro_html->add( '</thead>' ).
-
-  ENDMETHOD.
-
-
-  METHOD render_content.
-
-    DATA: ls_diff_file LIKE LINE OF mt_diff_files.
-
-    CREATE OBJECT ro_html.
-    CLEAR: mv_section_count.
-
-    ro_html->add( |<div id="diff-list" data-repo-key="REPO_KEY">| ).
-    LOOP AT mt_diff_files INTO ls_diff_file.
-
-      ro_html->add( render_diff( ls_diff_file ) ).
-    ENDLOOP.
-    ro_html->add( '</div>' ).
 
   ENDMETHOD.
 
@@ -508,32 +446,7 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD scripts.
 
-*fs    ro_html = super->scripts( ).
-
-    ro_html->add( 'var gHelper = new DiffHelper({' ).
-    ro_html->add( |  seed:        "{ mv_seed }",| ).
-    ro_html->add( '  ids: {' ).
-    ro_html->add( '    jump:        "jump",' ).
-    ro_html->add( '    diffList:    "diff-list",' ).
-    ro_html->add( '    filterMenu:  "diff-filter",' ).
-    ro_html->add( '  }' ).
-    ro_html->add( '});' ).
-
-    IF mv_patch_mode = abap_true.
-      ro_html->add( 'preparePatch();' ).
-      ro_html->add( 'registerStagePatch();' ).
-    ENDIF.
-
-    ro_html->add( 'addMarginBottom();' ).
-
-    ro_html->add( 'var gGoJumpPalette = new CommandPalette(enumerateJumpAllFiles, {' ).
-    ro_html->add( '  toggleKey: "F2",' ).
-    ro_html->add( '  hotkeyDescription: "Jump to file ..."' ).
-    ro_html->add( '});' ).
-
-  ENDMETHOD.
 
   METHOD render_item_state.
 

@@ -13,7 +13,7 @@ CLASS zcl_cts_convert DEFINITION
       IMPORTING
         !iv_x             TYPE x
       RETURNING
-        VALUE(rv_bitbyte) TYPE zif_abapgit_definitions=>ty_bitbyte .
+        VALUE(rv_bitbyte) TYPE zif_cts_definitions=>ty_bitbyte .
     CLASS-METHODS string_to_xstring_utf8
       IMPORTING
         !iv_string        TYPE string
@@ -30,7 +30,7 @@ CLASS zcl_cts_convert DEFINITION
       RETURNING
         VALUE(rv_i) TYPE i
       RAISING
-        zcx_abapgit_exception .
+        zcx_cts_exception .
     CLASS-METHODS int_to_xstring4
       IMPORTING
         !iv_i             TYPE i

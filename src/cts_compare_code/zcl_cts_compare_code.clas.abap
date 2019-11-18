@@ -134,9 +134,6 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
   ENDMETHOD.
 
 
-
-
-
   METHOD render_beacon.
 
     DATA: lv_beacon  TYPE string,
@@ -249,7 +246,6 @@ CLASS zcl_cts_compare_code IMPLEMENTATION.
     lo_diff->mv_unified = abap_false.
 
     ro_html = lo_diff->render_diff( is_diff ).
-
 
   ENDMETHOD.
 

@@ -318,8 +318,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
           lt_dates  TYPE trgr_date,
           lt_text   TYPE /iwbep/t_cod_select_options,
           lt_trkorr TYPE cnvc_scwb_tr,
-          ls_filter TYPE /iwbep/s_mgw_select_option,
-          ls_date   TYPE trgs_datum.
+          ls_filter TYPE /iwbep/s_mgw_select_option.
 
     CREATE OBJECT lo_dao.
 
@@ -446,8 +445,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
           lv_parent_request TYPE trkorr,
           lt_dates          TYPE trgr_date,
           lt_users          TYPE trgr_user,
-          ls_filter         TYPE /iwbep/s_mgw_select_option,
-          ls_date           TYPE trgs_datum.
+          ls_filter         TYPE /iwbep/s_mgw_select_option.
 
     CREATE OBJECT lo_dao.
 

@@ -1,49 +1,45 @@
-class ZCL_CTS_COMPARE_CODE definition
-  public
-  inheriting from ZCL_ABAPGIT_GUI_PAGE
-  final
-  create public .
+CLASS zcl_cts_compare_code DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
 
-public section.
+  PUBLIC SECTION.
 
-  interfaces ZIF_ABAPGIT_GUI_PAGE_HOTKEY .
-
-  types:
-    BEGIN OF ty_file_diff,
+    TYPES:
+      BEGIN OF ty_file_diff,
         path       TYPE string,
         filename   TYPE string,
         lstate     TYPE char1,
         rstate     TYPE char1,
         fstate     TYPE char1, " FILE state - Abstraction for shorter ifs
-        o_diff     TYPE REF TO zcl_abapgit_diff,
+        o_diff     TYPE REF TO zcl_cts_diff,
         changed_by TYPE xubname,
         type       TYPE string,
       END OF ty_file_diff .
-  types:
-    tt_file_diff TYPE STANDARD TABLE OF ty_file_diff .
+    TYPES:
+      tt_file_diff TYPE STANDARD TABLE OF ty_file_diff .
 
-  constants:
-    BEGIN OF c_fstate,
+    CONSTANTS:
+      BEGIN OF c_fstate,
         local  TYPE char1 VALUE 'L',
         remote TYPE char1 VALUE 'R',
         both   TYPE char1 VALUE 'B',
       END OF c_fstate .
 
-  methods CONSTRUCTOR .
-  class-methods RENDER_DIFF_PUBLIC
-    importing
-      !IS_DIFF type zcl_abapgit_gui_page_diff=>ty_file_diff
-    returning
-      value(RO_HTML) type ref to ZCL_ABAPGIT_HTML .
+    METHODS constructor .
+    CLASS-METHODS render_diff_public
+      IMPORTING
+        !is_diff       TYPE zcl_cts_compare_code=>ty_file_diff
+      RETURNING
+        VALUE(ro_html) TYPE REF TO zcl_cts_html .
 
-  methods ZIF_ABAPGIT_GUI_EVENT_HANDLER~ON_EVENT
-    redefinition .
-protected section.
+  PROTECTED SECTION.
 
-  methods RENDER_CONTENT
-    redefinition .
-  methods SCRIPTS
-    redefinition .
+
+
+
+
+
   PRIVATE SECTION.
     TYPES: ty_patch_action TYPE string.
 
@@ -56,436 +52,73 @@ protected section.
                  remove TYPE ty_patch_action VALUE 'remove',
                END OF c_patch_action.
 
-    DATA: mt_diff_files    TYPE tt_file_diff,
-          mt_delayed_lines TYPE zif_abapgit_definitions=>ty_diffs_tt,
+    DATA: mt_delayed_lines TYPE zif_cts_definitions=>ty_diffs_tt,
           mv_unified       TYPE abap_bool VALUE abap_true,
-          mv_repo_key      TYPE zif_abapgit_persistence=>ty_repo-key,
-          mv_seed          TYPE string, " Unique page id to bind JS sessionStorage
           mv_patch_mode    TYPE abap_bool,
-          mo_stage         TYPE REF TO zcl_abapgit_stage,
           mv_section_count TYPE i.
 
     METHODS render_diff
       IMPORTING is_diff        TYPE ty_file_diff
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
+      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
     METHODS render_diff_head
       IMPORTING is_diff        TYPE ty_file_diff
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
+      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
     METHODS render_table_head
       IMPORTING is_diff        TYPE ty_file_diff
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
+      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
     METHODS render_lines
       IMPORTING is_diff        TYPE ty_file_diff
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
+      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
     METHODS render_beacon
-      IMPORTING is_diff_line   TYPE zif_abapgit_definitions=>ty_diff
+      IMPORTING is_diff_line   TYPE zif_cts_definitions=>ty_diff
                 is_diff        TYPE ty_file_diff
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
+      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
     METHODS render_line_split
-      IMPORTING is_diff_line   TYPE zif_abapgit_definitions=>ty_diff
+      IMPORTING is_diff_line   TYPE zif_cts_definitions=>ty_diff
                 iv_filename    TYPE string
                 iv_fstate      TYPE char1
                 iv_index       TYPE sy-tabix
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
+      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
     METHODS render_line_unified
-      IMPORTING is_diff_line   TYPE zif_abapgit_definitions=>ty_diff OPTIONAL
-      RETURNING VALUE(ro_html) TYPE REF TO zcl_abapgit_html.
-    METHODS append_diff
-      IMPORTING it_remote TYPE zif_abapgit_definitions=>ty_files_tt
-                it_local  TYPE zif_abapgit_definitions=>ty_files_item_tt
-                is_status TYPE zif_abapgit_definitions=>ty_result
-      RAISING   zcx_abapgit_exception.
-    METHODS build_menu
-      RETURNING VALUE(ro_menu) TYPE REF TO zcl_abapgit_html_toolbar.
-    METHODS is_binary
-      IMPORTING iv_d1         TYPE xstring
-                iv_d2         TYPE xstring
-      RETURNING VALUE(rv_yes) TYPE abap_bool.
-    METHODS add_to_stage
-      RAISING
-        zcx_abapgit_exception.
-    METHODS render_patch
+      IMPORTING is_diff_line   TYPE zif_cts_definitions=>ty_diff OPTIONAL
+      RETURNING VALUE(ro_html) TYPE REF TO zcl_cts_html.
+
+
+
+
+
+
+
+
+
+
+    CLASS-METHODS render_item_state
       IMPORTING
-        io_html                TYPE REF TO zcl_abapgit_html
-        iv_patch_line_possible TYPE abap_bool
-        iv_filename            TYPE string
-        is_diff_line           TYPE zif_abapgit_definitions=>ty_diff
-        iv_index               TYPE sy-tabix.
-    METHODS start_staging
-      IMPORTING
-        it_postdata TYPE cnht_post_data_tab
-      RAISING
-        zcx_abapgit_exception.
-    METHODS apply_patch_all
-      IMPORTING
-        iv_patch      TYPE string
-        iv_patch_flag TYPE abap_bool
-      RAISING
-        zcx_abapgit_exception.
-    METHODS render_patch_head
-      IMPORTING
-        io_html TYPE REF TO zcl_abapgit_html
-        is_diff TYPE zcl_abapgit_gui_page_diff=>ty_file_diff.
-    METHODS apply_patch_for
-      IMPORTING
-        iv_filename   TYPE string
-        iv_line_index TYPE string
-        iv_patch_flag TYPE abap_bool
-      RAISING
-        zcx_abapgit_exception.
-    METHODS get_diff_object
-      IMPORTING
-        iv_filename    TYPE string
+        !iv_lstate     TYPE char1
+        !iv_rstate     TYPE char1
       RETURNING
-        VALUE(ro_diff) TYPE REF TO zcl_abapgit_diff
-      RAISING
-        zcx_abapgit_exception.
-    METHODS get_diff_line
-      IMPORTING
-        io_diff        TYPE REF TO zcl_abapgit_diff
-        iv_line_index  TYPE string
-      RETURNING
-        VALUE(rs_diff) TYPE zif_abapgit_definitions=>ty_diff
-      RAISING
-        zcx_abapgit_exception.
-    METHODS are_all_lines_patched
-      IMPORTING
-        it_diff                         TYPE zif_abapgit_definitions=>ty_diffs_tt
-      RETURNING
-        VALUE(rv_are_all_lines_patched) TYPE abap_bool.
-    METHODS add_jump_sub_menu
-      IMPORTING
-        io_menu TYPE REF TO zcl_abapgit_html_toolbar.
-    METHODS add_filter_sub_menu
-      IMPORTING
-        io_menu TYPE REF TO zcl_abapgit_html_toolbar.
-    CLASS-METHODS get_patch_data
-      IMPORTING
-        iv_patch      TYPE string
-      EXPORTING
-        ev_filename   TYPE string
-        ev_line_index TYPE string
-      RAISING
-        zcx_abapgit_exception.
+        VALUE(rv_html) TYPE string .
+
 ENDCLASS.
 
 
 
-CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
+CLASS zcl_cts_compare_code IMPLEMENTATION.
 
 
-  METHOD add_filter_sub_menu.
 
-    DATA:
-      lo_sub_filter TYPE REF TO zcl_abapgit_html_toolbar,
-      lt_types      TYPE string_table,
-      lt_users      TYPE string_table.
 
-    FIELD-SYMBOLS: <ls_diff> LIKE LINE OF mt_diff_files,
-                   <lv_i>    TYPE string.
-    " Get unique
-    LOOP AT mt_diff_files ASSIGNING <ls_diff>.
-      APPEND <ls_diff>-type TO lt_types.
-      APPEND <ls_diff>-changed_by TO lt_users.
-    ENDLOOP.
 
-    SORT: lt_types, lt_users.
-    DELETE ADJACENT DUPLICATES FROM: lt_types, lt_users.
 
-    IF lines( lt_types ) > 1 OR lines( lt_users ) > 1.
-      CREATE OBJECT lo_sub_filter EXPORTING iv_id = 'diff-filter'.
 
-      " File types
-      IF lines( lt_types ) > 1.
-        lo_sub_filter->add( iv_txt = 'TYPE' iv_typ = zif_abapgit_html=>c_action_type-separator ).
-        LOOP AT lt_types ASSIGNING <lv_i>.
-          lo_sub_filter->add( iv_txt = <lv_i>
-                       iv_typ = zif_abapgit_html=>c_action_type-onclick
-                       iv_aux = 'type'
-                       iv_chk = abap_true ).
-        ENDLOOP.
-      ENDIF.
 
-      " Changed by
-      IF lines( lt_users ) > 1.
-        lo_sub_filter->add( iv_txt = 'CHANGED BY' iv_typ = zif_abapgit_html=>c_action_type-separator ).
-        LOOP AT lt_users ASSIGNING <lv_i>.
-          lo_sub_filter->add( iv_txt = <lv_i>
-                       iv_typ = zif_abapgit_html=>c_action_type-onclick
-                       iv_aux = 'changed-by'
-                       iv_chk = abap_true ).
-        ENDLOOP.
-      ENDIF.
 
-      io_menu->add( iv_txt = 'Filter'
-                    io_sub = lo_sub_filter ) ##NO_TEXT.
-    ENDIF.
 
-  ENDMETHOD.
 
 
-  METHOD add_jump_sub_menu.
 
-    DATA: lo_sub_jump TYPE REF TO zcl_abapgit_html_toolbar.
-    FIELD-SYMBOLS: <ls_diff> LIKE LINE OF mt_diff_files.
 
-    CREATE OBJECT lo_sub_jump EXPORTING iv_id = 'jump'.
 
-    LOOP AT mt_diff_files ASSIGNING <ls_diff>.
-
-      lo_sub_jump->add(
-          iv_id  = |li_jump_{ sy-tabix }|
-          iv_txt = <ls_diff>-filename
-          iv_typ = zif_abapgit_html=>c_action_type-onclick ).
-
-    ENDLOOP.
-
-    io_menu->add( iv_txt = 'Jump'
-                  io_sub = lo_sub_jump ) ##NO_TEXT.
-
-  ENDMETHOD.
-
-
-  METHOD add_to_stage.
-
-    DATA: lo_repo              TYPE REF TO zcl_abapgit_repo_online,
-          lt_diff              TYPE zif_abapgit_definitions=>ty_diffs_tt,
-          lv_something_patched TYPE abap_bool,
-          lv_patch             TYPE xstring,
-          lo_git_add_patch     TYPE REF TO zcl_abapgit_git_add_patch.
-
-    FIELD-SYMBOLS: <ls_diff_file> TYPE zcl_abapgit_gui_page_diff=>ty_file_diff.
-
-    lo_repo ?= zcl_abapgit_repo_srv=>get_instance( )->get( mv_repo_key ).
-
-    LOOP AT mt_diff_files ASSIGNING <ls_diff_file>.
-
-      IF <ls_diff_file>-o_diff IS NOT BOUND.
-        " When we deal with binary files we don't have a diff object.
-        " There's nothing to do because they cannot be patched
-        CONTINUE.
-      ENDIF.
-
-      lt_diff = <ls_diff_file>-o_diff->get( ).
-
-      READ TABLE lt_diff TRANSPORTING NO FIELDS
-                         WITH KEY patch_flag = abap_true.
-      CHECK sy-subrc = 0.
-
-      lv_something_patched = abap_true.
-
-      CREATE OBJECT lo_git_add_patch
-        EXPORTING
-          it_diff = <ls_diff_file>-o_diff->get( ).
-
-      lv_patch = lo_git_add_patch->get_patch_binary( ).
-
-      IF  <ls_diff_file>-lstate = 'D'
-      AND are_all_lines_patched( lt_diff ) = abap_true.
-
-        mo_stage->rm(
-            iv_path     = <ls_diff_file>-path
-            iv_filename = <ls_diff_file>-filename ).
-
-      ELSE.
-
-        mo_stage->add(
-            iv_path     = <ls_diff_file>-path
-            iv_filename = <ls_diff_file>-filename
-            iv_data     = lv_patch ).
-
-      ENDIF.
-
-    ENDLOOP.
-
-    IF lv_something_patched = abap_false.
-      zcx_abapgit_exception=>raise( |Nothing added| ).
-    ENDIF.
-
-  ENDMETHOD.
-
-
-  METHOD append_diff.
-
-    DATA:
-      lv_offs    TYPE i,
-      ls_r_dummy LIKE LINE OF it_remote ##NEEDED,
-      ls_l_dummy LIKE LINE OF it_local  ##NEEDED.
-
-    FIELD-SYMBOLS: <ls_remote> LIKE LINE OF it_remote,
-                   <ls_local>  LIKE LINE OF it_local,
-                   <ls_diff>   LIKE LINE OF mt_diff_files.
-
-
-    READ TABLE it_remote ASSIGNING <ls_remote>
-      WITH KEY filename = is_status-filename
-               path     = is_status-path.
-    IF sy-subrc <> 0.
-      ASSIGN ls_r_dummy TO <ls_remote>.
-    ENDIF.
-
-    READ TABLE it_local ASSIGNING <ls_local>
-      WITH KEY file-filename = is_status-filename
-               file-path     = is_status-path.
-    IF sy-subrc <> 0.
-      ASSIGN ls_l_dummy TO <ls_local>.
-    ENDIF.
-
-    IF <ls_local> IS INITIAL AND <ls_remote> IS INITIAL.
-      zcx_abapgit_exception=>raise( |DIFF: file not found { is_status-filename }| ).
-    ENDIF.
-
-    APPEND INITIAL LINE TO mt_diff_files ASSIGNING <ls_diff>.
-    <ls_diff>-path     = is_status-path.
-    <ls_diff>-filename = is_status-filename.
-    <ls_diff>-lstate   = is_status-lstate.
-    <ls_diff>-rstate   = is_status-rstate.
-
-    IF <ls_diff>-lstate IS NOT INITIAL AND <ls_diff>-rstate IS NOT INITIAL.
-      <ls_diff>-fstate = c_fstate-both.
-    ELSEIF <ls_diff>-lstate IS NOT INITIAL.
-      <ls_diff>-fstate = c_fstate-local.
-    ELSE. "rstate IS NOT INITIAL, lstate = empty.
-      <ls_diff>-fstate = c_fstate-remote.
-    ENDIF.
-
-    " Changed by
-    IF <ls_local>-item-obj_type IS NOT INITIAL.
-      <ls_diff>-changed_by = to_lower( zcl_abapgit_objects=>changed_by( <ls_local>-item ) ).
-    ENDIF.
-
-    " Extension
-    IF <ls_local>-file-filename IS NOT INITIAL.
-      <ls_diff>-type = reverse( <ls_local>-file-filename ).
-    ELSE.
-      <ls_diff>-type = reverse( <ls_remote>-filename ).
-    ENDIF.
-
-    FIND FIRST OCCURRENCE OF '.' IN <ls_diff>-type MATCH OFFSET lv_offs.
-    <ls_diff>-type = reverse( substring( val = <ls_diff>-type len = lv_offs ) ).
-    IF <ls_diff>-type <> 'xml' AND <ls_diff>-type <> 'abap'.
-      <ls_diff>-type = 'other'.
-    ENDIF.
-
-    IF <ls_diff>-type = 'other'
-       AND is_binary( iv_d1 = <ls_remote>-data iv_d2 = <ls_local>-file-data ) = abap_true.
-      <ls_diff>-type = 'binary'.
-    ENDIF.
-
-    " Diff data
-    IF <ls_diff>-type <> 'binary'.
-      IF <ls_diff>-fstate = c_fstate-remote. " Remote file leading changes
-        CREATE OBJECT <ls_diff>-o_diff
-          EXPORTING
-            iv_new = <ls_remote>-data
-            iv_old = <ls_local>-file-data.
-      ELSE.             " Local leading changes or both were modified
-        CREATE OBJECT <ls_diff>-o_diff
-          EXPORTING
-            iv_new = <ls_local>-file-data
-            iv_old = <ls_remote>-data.
-      ENDIF.
-    ENDIF.
-
-  ENDMETHOD.
-
-
-  METHOD apply_patch_all.
-
-    DATA: lv_filename   TYPE string,
-          lt_patch      TYPE string_table,
-          lv_line_index TYPE string.
-
-    FIELD-SYMBOLS: <lv_patch>     TYPE LINE OF string_table.
-
-    SPLIT iv_patch AT ',' INTO TABLE lt_patch.
-
-    LOOP AT lt_patch ASSIGNING <lv_patch>.
-
-      get_patch_data(
-        EXPORTING
-          iv_patch      = <lv_patch>
-        IMPORTING
-          ev_filename   = lv_filename
-          ev_line_index = lv_line_index ).
-
-      apply_patch_for( iv_filename   = lv_filename
-                       iv_line_index = lv_line_index
-                       iv_patch_flag = iv_patch_flag ).
-
-    ENDLOOP.
-
-  ENDMETHOD.
-
-
-  METHOD apply_patch_for.
-
-    DATA: lo_diff      TYPE REF TO zcl_abapgit_diff,
-          ls_diff_line TYPE zif_abapgit_definitions=>ty_diff,
-          lv_line      TYPE i.
-
-    lo_diff = get_diff_object( iv_filename ).
-
-    ls_diff_line = get_diff_line( io_diff       = lo_diff
-                                  iv_line_index = iv_line_index ).
-
-    CASE ls_diff_line-result.
-      WHEN zif_abapgit_definitions=>c_diff-update
-        OR zif_abapgit_definitions=>c_diff-insert.
-
-        lv_line = ls_diff_line-new_num.
-
-        lo_diff->set_patch_new( iv_line_new   = lv_line
-                                iv_patch_flag = iv_patch_flag ).
-
-      WHEN zif_abapgit_definitions=>c_diff-delete.
-
-        lv_line =  ls_diff_line-old_num.
-
-        lo_diff->set_patch_old( iv_line_old   = lv_line
-                                iv_patch_flag = iv_patch_flag ).
-
-    ENDCASE.
-
-  ENDMETHOD.
-
-
-  METHOD are_all_lines_patched.
-
-    DATA: lv_patch_count TYPE i.
-
-    FIELD-SYMBOLS: <ls_diff> TYPE zif_abapgit_definitions=>ty_diff.
-
-    LOOP AT it_diff ASSIGNING <ls_diff>
-                    WHERE patch_flag = abap_true.
-      lv_patch_count = lv_patch_count + 1.
-    ENDLOOP.
-
-    rv_are_all_lines_patched = boolc( lv_patch_count = lines( it_diff ) ).
-
-  ENDMETHOD.
-
-
-  METHOD build_menu.
-
-    CREATE OBJECT ro_menu.
-
-    add_jump_sub_menu( ro_menu ).
-    add_filter_sub_menu( ro_menu ).
-
-    IF mv_patch_mode = abap_true.
-      ro_menu->add( iv_txt = 'Stage'
-                    iv_act = c_actions-stage
-                    iv_id  = 'stage'
-                    iv_typ = zif_abapgit_html=>c_action_type-dummy
-                     ) ##NO_TEXT.
-    ELSE.
-      ro_menu->add( iv_txt = 'Split/Unified view'
-                    iv_act = c_actions-toggle_unified ) ##NO_TEXT.
-    ENDIF.
-
-
-  ENDMETHOD.
 
 
   METHOD constructor.
@@ -501,98 +134,10 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD get_diff_line.
-
-    DATA: lt_diff       TYPE zif_abapgit_definitions=>ty_diffs_tt,
-          lv_line_index TYPE sy-tabix.
-
-
-    lv_line_index = iv_line_index.
-    lt_diff = io_diff->get( ).
-
-    READ TABLE lt_diff INTO rs_diff
-                       INDEX lv_line_index.
-    IF sy-subrc <> 0.
-      zcx_abapgit_exception=>raise( |Invalid line index { lv_line_index }| ).
-    ENDIF.
-
-  ENDMETHOD.
-
-
-  METHOD get_diff_object.
-
-    FIELD-SYMBOLS: <ls_diff_file> LIKE LINE OF mt_diff_files.
-
-    READ TABLE mt_diff_files ASSIGNING <ls_diff_file>
-                             WITH KEY filename = iv_filename.
-    IF sy-subrc <> 0.
-      zcx_abapgit_exception=>raise( |Invalid filename { iv_filename }| ).
-    ENDIF.
-
-    ro_diff = <ls_diff_file>-o_diff.
-
-  ENDMETHOD.
-
-
-  METHOD get_patch_data.
-
-    DATA: lv_section TYPE string.
-
-    CLEAR: ev_filename, ev_line_index.
-
-    FIND FIRST OCCURRENCE OF REGEX `patch_line` && `_(.*)_(\d)+_(\d+)`
-         IN iv_patch
-         SUBMATCHES ev_filename lv_section ev_line_index.
-    IF sy-subrc <> 0.
-      zcx_abapgit_exception=>raise( |Invalid patch| ).
-    ENDIF.
-
-  ENDMETHOD.
-
-
-  METHOD is_binary.
-
-    DATA: lv_len TYPE i,
-          lv_idx TYPE i,
-          lv_x   TYPE x.
-
-    FIELD-SYMBOLS <lv_data> LIKE iv_d1.
-
-
-    IF iv_d1 IS NOT INITIAL. " One of them might be new and so empty
-      ASSIGN iv_d1 TO <lv_data>.
-    ELSE.
-      ASSIGN iv_d2 TO <lv_data>.
-    ENDIF.
-
-    lv_len = xstrlen( <lv_data> ).
-    IF lv_len = 0.
-      RETURN.
-    ENDIF.
-
-    IF lv_len > 100.
-      lv_len = 100.
-    ENDIF.
-
-    " Simple char range test
-    " stackoverflow.com/questions/277521/how-to-identify-the-file-content-as-ascii-or-binary
-    DO lv_len TIMES. " I'm sure there is more efficient way ...
-      lv_idx = sy-index - 1.
-      lv_x = <lv_data>+lv_idx(1).
-
-      IF NOT ( lv_x BETWEEN 9 AND 13 OR lv_x BETWEEN 32 AND 126 ).
-        rv_yes = abap_true.
-        EXIT.
-      ENDIF.
-    ENDDO.
-
-  ENDMETHOD.
-
-
   METHOD render_beacon.
 
     DATA: lv_beacon  TYPE string,
-          lt_beacons TYPE zif_abapgit_definitions=>ty_string_tt.
+          lt_beacons TYPE zif_cts_definitions=>ty_string_tt.
 
     CREATE OBJECT ro_html.
 
@@ -630,32 +175,6 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD render_content.
-
-    DATA: ls_diff_file LIKE LINE OF mt_diff_files,
-          li_progress  TYPE REF TO zif_abapgit_progress.
-
-
-    CREATE OBJECT ro_html.
-
-    CLEAR: mv_section_count.
-
-    li_progress = zcl_abapgit_progress=>get_instance( lines( mt_diff_files ) ).
-
-    ro_html->add( |<div id="diff-list" data-repo-key="{ mv_repo_key }">| ).
-    ro_html->add( zcl_abapgit_gui_chunk_lib=>render_js_error_banner( ) ).
-    LOOP AT mt_diff_files INTO ls_diff_file.
-      li_progress->show(
-        iv_current = sy-tabix
-        iv_text    = |Render Diff - { ls_diff_file-filename }| ).
-
-      ro_html->add( render_diff( ls_diff_file ) ).
-    ENDLOOP.
-    ro_html->add( '</div>' ).
-
-  ENDMETHOD.
-
-
   METHOD render_diff.
 
     CREATE OBJECT ro_html.
@@ -686,7 +205,7 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
 
   METHOD render_diff_head.
 
-    DATA: ls_stats TYPE zif_abapgit_definitions=>ty_count.
+    DATA: ls_stats TYPE zif_cts_definitions=>ty_count.
 
     CREATE OBJECT ro_html.
 
@@ -705,7 +224,7 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
     ENDIF.
 
     ro_html->add( |<span class="diff_name">{ is_diff-path }{ is_diff-filename }</span>| ). "#EC NOTEXT
-    ro_html->add( zcl_abapgit_gui_chunk_lib=>render_item_state(
+    ro_html->add( render_item_state(
       iv_lstate = is_diff-lstate
       iv_rstate = is_diff-rstate ) ).
 
@@ -722,28 +241,23 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD RENDER_DIFF_PUBLIC.
-    DATA: l_url_file1 TYPE string.
-
-    DATA(lo_diff) = new zcl_cts_compare_code( ).
+  METHOD render_diff_public.
+    DATA(lo_diff) = NEW zcl_cts_compare_code( ).
     lo_diff->mv_unified = abap_false.
 
     ro_html = lo_diff->render_diff( is_diff ).
-
 
   ENDMETHOD.
 
 
   METHOD render_lines.
 
-    DATA: lo_highlighter TYPE REF TO zcl_abapgit_syntax_highlighter,
-          lt_diffs       TYPE zif_abapgit_definitions=>ty_diffs_tt,
+    DATA: lt_diffs       TYPE zif_cts_definitions=>ty_diffs_tt,
           lv_insert_nav  TYPE abap_bool,
           lv_tabix       TYPE syst-tabix.
 
     FIELD-SYMBOLS <ls_diff>  LIKE LINE OF lt_diffs.
 
-    lo_highlighter = zcl_abapgit_syntax_highlighter=>create( is_diff-filename ).
     CREATE OBJECT ro_html.
 
     lt_diffs = is_diff-o_diff->get( ).
@@ -762,13 +276,8 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
         lv_insert_nav = abap_false.
       ENDIF.
 
-      IF lo_highlighter IS BOUND.
-        <ls_diff>-new = lo_highlighter->process_line( <ls_diff>-new ).
-        <ls_diff>-old = lo_highlighter->process_line( <ls_diff>-old ).
-      ELSE.
-        <ls_diff>-new = escape( val = <ls_diff>-new format = cl_abap_format=>e_html_attr ).
-        <ls_diff>-old = escape( val = <ls_diff>-old format = cl_abap_format=>e_html_attr ).
-      ENDIF.
+      <ls_diff>-new = escape( val = <ls_diff>-new format = cl_abap_format=>e_html_attr ).
+      <ls_diff>-old = escape( val = <ls_diff>-old format = cl_abap_format=>e_html_attr ).
 
       CONDENSE <ls_diff>-new_num. "get rid of leading spaces
       CONDENSE <ls_diff>-old_num.
@@ -804,10 +313,10 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
     " New line
     lv_mark = ` `.
     IF is_diff_line-result IS NOT INITIAL.
-      IF iv_fstate = c_fstate-both OR is_diff_line-result = zif_abapgit_definitions=>c_diff-update.
+      IF iv_fstate = c_fstate-both OR is_diff_line-result = zif_cts_definitions=>c_diff-update.
         lv_bg = ' diff_upd'.
         lv_mark = `~`.
-      ELSEIF is_diff_line-result = zif_abapgit_definitions=>c_diff-insert.
+      ELSEIF is_diff_line-result = zif_cts_definitions=>c_diff-insert.
         lv_bg = ' diff_ins'.
         lv_mark = `+`.
       ENDIF.
@@ -823,10 +332,10 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
     CLEAR lv_bg.
     lv_mark = ` `.
     IF is_diff_line-result IS NOT INITIAL.
-      IF iv_fstate = c_fstate-both OR is_diff_line-result = zif_abapgit_definitions=>c_diff-update.
+      IF iv_fstate = c_fstate-both OR is_diff_line-result = zif_cts_definitions=>c_diff-update.
         lv_bg = ' diff_upd'.
         lv_mark = `~`.
-      ELSEIF is_diff_line-result = zif_abapgit_definitions=>c_diff-delete.
+      ELSEIF is_diff_line-result = zif_cts_definitions=>c_diff-delete.
         lv_bg = ' diff_del'.
         lv_mark = `-`.
       ENDIF.
@@ -840,16 +349,6 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
 
     " render line, inverse sides if remote is newer
     ro_html->add( '<tr>' ).                                 "#EC NOTEXT
-
-    IF mv_patch_mode = abap_true.
-
-      render_patch( io_html                = ro_html
-                    iv_patch_line_possible = lv_patch_line_possible
-                    iv_filename            = iv_filename
-                    is_diff_line           = is_diff_line
-                    iv_index               = iv_index ).
-
-    ENDIF.
 
     IF iv_fstate = c_fstate-remote. " Remote file leading changes
       ro_html->add( lv_old ). " local
@@ -871,7 +370,7 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
     CREATE OBJECT ro_html.
 
     " Release delayed subsequent update lines
-    IF is_diff_line-result <> zif_abapgit_definitions=>c_diff-update.
+    IF is_diff_line-result <> zif_cts_definitions=>c_diff-update.
       LOOP AT mt_delayed_lines ASSIGNING <ls_diff_line>.
         ro_html->add( '<tr>' ).                             "#EC NOTEXT
         ro_html->add( |<td class="num" line-num="{ <ls_diff_line>-old_num }"></td>|
@@ -891,13 +390,13 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
 
     ro_html->add( '<tr>' ).                                 "#EC NOTEXT
     CASE is_diff_line-result.
-      WHEN zif_abapgit_definitions=>c_diff-update.
+      WHEN zif_cts_definitions=>c_diff-update.
         APPEND is_diff_line TO mt_delayed_lines. " Delay output of subsequent updates
-      WHEN zif_abapgit_definitions=>c_diff-insert.
+      WHEN zif_cts_definitions=>c_diff-insert.
         ro_html->add( |<td class="num" line-num=""></td>|
                    && |<td class="num" line-num="{ is_diff_line-new_num }"></td>|
                    && |<td class="code diff_ins">+{ is_diff_line-new }</td>| ).
-      WHEN zif_abapgit_definitions=>c_diff-delete.
+      WHEN zif_cts_definitions=>c_diff-delete.
         ro_html->add( |<td class="num" line-num="{ is_diff_line-old_num }"></td>|
                    && |<td class="num" line-num=""></td>|
                    && |<td class="code diff_del">-{ is_diff_line-old }</td>| ).
@@ -911,45 +410,10 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD render_patch.
-
-    CONSTANTS:
-      BEGIN OF c_css_class,
-        patch TYPE string VALUE `patch` ##NO_TEXT,
-      END OF c_css_class.
-
-    DATA: lv_id          TYPE string,
-          lv_left_class  TYPE string,
-          lv_right_class TYPE string,
-          lv_object      TYPE string.
-
-    lv_object = iv_filename.
-
-    IF iv_patch_line_possible = abap_true.
-
-      lv_id = |{ lv_object }_{ mv_section_count }_{ iv_index }|.
-
-      io_html->add( |<td class="{ c_css_class-patch }">| ).
-      io_html->add_checkbox( iv_id = |patch_line_{ lv_id }| ).
-      io_html->add( |</td>| ).
-
-    ELSE.
-
-      io_html->add( |<td class="{ c_css_class-patch }">| ).
-      io_html->add( |</td>| ).
-
-    ENDIF.
-
-  ENDMETHOD.
 
 
-  METHOD render_patch_head.
 
-    io_html->add( |<th class="patch">| ).
-    io_html->add_checkbox( iv_id = |patch_file_{ is_diff-filename }| ).
-    io_html->add( '</th>' ).
 
-  ENDMETHOD.
 
 
   METHOD render_table_head.
@@ -965,13 +429,6 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
       ro_html->add( '<th>code</th>' ).                      "#EC NOTEXT
     ELSE.
 
-      IF mv_patch_mode = abap_true.
-
-        render_patch_head( io_html = ro_html
-                           is_diff = is_diff ).
-
-      ENDIF.
-
       ro_html->add( '<th class="num"></th>' ).              "#EC NOTEXT
       ro_html->add( '<th>LOCAL</th>' ).                     "#EC NOTEXT
       ro_html->add( '<th class="num"></th>' ).              "#EC NOTEXT
@@ -985,88 +442,50 @@ CLASS ZCL_CTS_COMPARE_CODE IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD scripts.
-
-    ro_html = super->scripts( ).
-
-    ro_html->add( 'var gHelper = new DiffHelper({' ).
-    ro_html->add( |  seed:        "{ mv_seed }",| ).
-    ro_html->add( '  ids: {' ).
-    ro_html->add( '    jump:        "jump",' ).
-    ro_html->add( '    diffList:    "diff-list",' ).
-    ro_html->add( '    filterMenu:  "diff-filter",' ).
-    ro_html->add( '  }' ).
-    ro_html->add( '});' ).
-
-    IF mv_patch_mode = abap_true.
-      ro_html->add( 'preparePatch();' ).
-      ro_html->add( 'registerStagePatch();' ).
-    ENDIF.
-
-    ro_html->add( 'addMarginBottom();' ).
-
-    ro_html->add( 'var gGoJumpPalette = new CommandPalette(enumerateJumpAllFiles, {' ).
-    ro_html->add( '  toggleKey: "F2",' ).
-    ro_html->add( '  hotkeyDescription: "Jump to file ..."' ).
-    ro_html->add( '});' ).
-
-  ENDMETHOD.
 
 
-  METHOD start_staging.
+  METHOD render_item_state.
 
-    DATA: lv_string TYPE string,
-          lt_fields TYPE tihttpnvp,
-          lv_add    TYPE string,
-          lv_remove TYPE string.
+    DATA: lv_system TYPE string.
 
-    CONCATENATE LINES OF it_postdata INTO lv_string.
-    lt_fields = zcl_abapgit_html_action_utils=>parse_fields( lv_string ).
+    FIELD-SYMBOLS <lv_state> TYPE char1.
 
-    zcl_abapgit_html_action_utils=>get_field( EXPORTING iv_name  = c_patch_action-add
-                                                        it_field = lt_fields
-                                              CHANGING  cg_field = lv_add ).
 
-    zcl_abapgit_html_action_utils=>get_field( EXPORTING iv_name  = c_patch_action-remove
-                                                        it_field = lt_fields
-                                              CHANGING  cg_field = lv_remove ).
+    rv_html = '<span class="state-block">'.
 
-    apply_patch_all( iv_patch      = lv_add
-                     iv_patch_flag = abap_true ).
+    DO 2 TIMES.
+      CASE sy-index.
+        WHEN 1.
+          ASSIGN iv_lstate TO <lv_state>.
+          lv_system = 'Local:'.
+        WHEN 2.
+          ASSIGN iv_rstate TO <lv_state>.
+          lv_system = 'Remote:'.
+      ENDCASE.
 
-    apply_patch_all( iv_patch      = lv_remove
-                     iv_patch_flag = abap_false ).
+      CASE <lv_state>.
+        WHEN zif_cts_definitions=>c_state-unchanged.  "None or unchanged
+          IF iv_lstate = zif_cts_definitions=>c_state-added OR iv_rstate = zif_cts_definitions=>c_state-added.
+            rv_html = rv_html && |<span class="none" title="{ lv_system } Not exists">X</span>|.
+          ELSE.
+            rv_html = rv_html && |<span class="none" title="{ lv_system } No changes">&nbsp;</span>|.
+          ENDIF.
+        WHEN zif_cts_definitions=>c_state-modified.   "Changed
+          rv_html = rv_html && |<span class="changed" title="{ lv_system } Modified">M</span>|.
+        WHEN zif_cts_definitions=>c_state-added.      "Added new
+          rv_html = rv_html && |<span class="added" title="{ lv_system } Added new">A</span>|.
+        WHEN zif_cts_definitions=>c_state-mixed.      "Multiple changes (multifile)
+          rv_html = rv_html && |<span class="mixed" title="{ lv_system } Multiple changes">&#x25A0;</span>|.
+        WHEN zif_cts_definitions=>c_state-deleted.    "Deleted
+          rv_html = rv_html && |<span class="deleted" title="{ lv_system } Deleted">D</span>|.
+      ENDCASE.
+    ENDDO.
 
-    add_to_stage( ).
+    rv_html = rv_html && '</span>'.
 
   ENDMETHOD.
 
 
-  METHOD zif_abapgit_gui_page_hotkey~get_hotkey_actions.
-
-    DATA: ls_hotkey_action LIKE LINE OF rt_hotkey_actions.
-
-    ls_hotkey_action-name   = |Stage changes|.
-    ls_hotkey_action-action = |stagePatch|.
-    ls_hotkey_action-hotkey = |s|.
-    INSERT ls_hotkey_action INTO TABLE rt_hotkey_actions.
-
-  ENDMETHOD.
 
 
-  method ZIF_ABAPGIT_GUI_EVENT_HANDLer~ON_EVENT.
-**TRY.
-*CALL METHOD SUPER->ZIF_ABAPGIT_GUI_EVENT_HANDLER~ON_EVENT
-*  EXPORTING
-*    IV_ACTION    =
-*    IV_PREV_PAGE =
-**    iv_getdata   =
-**    it_postdata  =
-**  IMPORTING
-**    ei_page      =
-**    ev_state     =
-*    .
-** CATCH zcx_abapgit_exception .
-**ENDTRY.
-  endmethod.
 ENDCLASS.

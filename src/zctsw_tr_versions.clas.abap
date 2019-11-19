@@ -89,9 +89,7 @@ CLASS ZCTSW_TR_VERSIONS IMPLEMENTATION.
 
     DATA(lo_html) = zcl_cts_compare_code=>render_diff_public( ls_page_difference ).
 
-    r_compare_text = lo_html->render(
-*                         iv_no_indent_jscss =
-                     ).
+    r_compare_text = lo_html->render( ).
 
   ENDMETHOD.
 

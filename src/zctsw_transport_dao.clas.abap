@@ -472,6 +472,23 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
           ls_object-object_description = get_description_for_object( i_pgmid = ls_object-pgmid i_object = ls_object-objecttype ).
           ls_object-is_source = abap_true.
           ls_object-dev_package = get_package_for_object( i_object = 'PROG' i_obj_name = ls_object-obj_name(40) ).
+        when 'FUNC'.
+          ls_object-objecttype = ls_object-objecttype.
+          ls_object-obj_name = ls_object-obj_name.
+          get_adt_url_for_object(
+            EXPORTING
+              i_object_type = 'FUNC'
+              i_object_name = ls_object-obj_name
+            IMPORTING
+              e_abs_url = ls_object-adt_abs_url
+              e_rel_url = ls_object-adt_rel_url ).
+
+          ls_object-adt_abs_url = ls_object-adt_abs_url.
+          ls_object-adt_rel_url = ls_object-adt_rel_url.
+          ls_object-adt_eclipse_url = 'adt://' && sy-sysid && ls_object-adt_rel_url.
+          ls_object-object_description = get_description_for_object( i_pgmid = ls_object-pgmid i_object = ls_object-objecttype ).
+          ls_object-is_source = abap_true.
+          ls_object-dev_package = get_package_for_object( i_object = 'FUNC' i_obj_name = ls_object-obj_name(40) ).
         WHEN OTHERS.
           ls_object-object_description = get_description_for_object( i_pgmid = ls_object-pgmid i_object = ls_object-objecttype ).
       ENDCASE.

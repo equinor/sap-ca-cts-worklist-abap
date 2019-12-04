@@ -283,12 +283,17 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
 * CHG0134314 fstod\906575 12.03.2018 Method created
 *-----------------------------------------------------------------------
 
+    DATA: ls_settings TYPE ctslg_settings.
+
+    ls_settings-point_to_missing_steps = abap_true.
+    ls_settings-detailed_depiction = abap_true.
 
     CALL FUNCTION 'TR_READ_GLOBAL_INFO_OF_REQUEST'
       EXPORTING
-        iv_trkorr = i_transport
+        iv_trkorr   = i_transport
+        is_settings = ls_settings
       IMPORTING
-        es_cofile = r_migration_status.
+        es_cofile   = r_migration_status.
 
   ENDMETHOD.
 
@@ -472,7 +477,7 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
           ls_object-object_description = get_description_for_object( i_pgmid = ls_object-pgmid i_object = ls_object-objecttype ).
           ls_object-is_source = abap_true.
           ls_object-dev_package = get_package_for_object( i_object = 'PROG' i_obj_name = ls_object-obj_name(40) ).
-        when 'FUNC'.
+        WHEN 'FUNC'.
           ls_object-objecttype = ls_object-objecttype.
           ls_object-obj_name = ls_object-obj_name.
           get_adt_url_for_object(

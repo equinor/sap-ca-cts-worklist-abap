@@ -344,7 +344,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
     ENDIF.
 
     "Set some default filters
-    IF lt_dates IS INITIAL AND lt_text IS INITIAL.
+    IF lt_dates IS INITIAL AND lt_text IS INITIAL AND lt_trkorr IS INITIAL.
       set_date_range(
       EXPORTING
         i_since_x_days = 90
@@ -523,24 +523,38 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 
   METHOD userset_get_entityset.
 
-    DATA: ls_filter     TYPE /iwbep/s_mgw_select_option,
-          lt_user_range TYPE /pra/tt_pn_r_user.
+    DATA: ls_filter        TYPE /iwbep/s_mgw_select_option,
+          lt_user_range    TYPE /pra/tt_pn_r_user,
+          ls_user_range    LIKE LINE OF lt_user_range,
+          lv_search_string TYPE string.
 
-    READ TABLE it_filter_select_options WITH KEY property = 'Bname' INTO ls_filter.
-    IF sy-subrc = 0.
-      lt_user_range = CORRESPONDING #( ls_filter-select_options ).
+    lv_search_string = iv_search_string.
+    TRANSLATE lv_search_string TO UPPER CASE.
+    IF NOT lv_search_string IS INITIAL.
+
+      ls_user_range-low = lv_search_string && '*'.
+      ls_user_range-sign = 'I'.
+      ls_user_range-option = 'CP'.
+      APPEND ls_user_range TO lt_user_range.
       SELECT * FROM user_addr INTO TABLE et_entityset
-          WHERE bname IN lt_user_range.
+          WHERE bname IN lt_user_range OR
+          mc_namefir IN lt_user_range OR
+          mc_namelas IN lt_user_range.
     ELSE.
-      READ TABLE it_filter_select_options WITH KEY property = 'NameTextc' INTO ls_filter.
+      READ TABLE it_filter_select_options WITH KEY property = 'Bname' INTO ls_filter.
       IF sy-subrc = 0.
+        lt_user_range = CORRESPONDING #( ls_filter-select_options ).
         SELECT * FROM user_addr INTO TABLE et_entityset
-          WHERE mc_namefir IN ls_filter-select_options
-          OR    mc_namelas IN ls_filter-select_options.
+            WHERE bname IN lt_user_range.
       ELSE.
-        SELECT * FROM user_addr INTO TABLE et_entityset.
-      ENDIF.
+        READ TABLE it_filter_select_options WITH KEY property = 'NameTextc' INTO ls_filter.
+        IF sy-subrc = 0.
+          SELECT * FROM user_addr INTO TABLE et_entityset
+            WHERE mc_namefir IN ls_filter-select_options
+            OR    mc_namelas IN ls_filter-select_options.
+        ENDIF.
 
+      ENDIF.
     ENDIF.
 
     SORT et_entityset BY bname.

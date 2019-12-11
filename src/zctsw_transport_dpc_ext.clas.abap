@@ -343,19 +343,11 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
       lt_text = CORRESPONDING #( ls_filter-select_options ).
     ENDIF.
 
-    "Set some default filters
-    IF lt_dates IS INITIAL AND lt_text IS INITIAL AND lt_trkorr IS INITIAL.
-      set_date_range(
-      EXPORTING
-        i_since_x_days = 90
-      CHANGING
-        ct_date_range  = lt_dates ).
-    ENDIF.
 
     IF lt_dates IS INITIAL AND lt_users IS INITIAL AND lt_text IS INITIAL.
       set_date_range(
       EXPORTING
-        i_since_x_days = 7
+        i_since_x_days = 30
       CHANGING
         ct_date_range  = lt_dates ).
     ENDIF.

@@ -20,13 +20,16 @@ CLASS zctsw_transport_mpc_ext DEFINITION
 
     METHODS create_entity_valuehelp
       IMPORTING
-        !i_target_entity    TYPE /iwbep/med_external_name
-        !i_collection       TYPE string
+        i_target_entity     TYPE /iwbep/med_external_name
+        i_collection        TYPE string
         i_column1           TYPE string
         i_column2           TYPE string
         i_column3           TYPE string OPTIONAL
         i_entity_ref_column TYPE string
         i_search_supported  TYPE abap_bool DEFAULT abap_false.
+    METHODS set_description_field_for_user
+      RAISING
+        /iwbep/cx_mgw_med_exception.
 
 ENDCLASS.
 
@@ -47,8 +50,22 @@ CLASS zctsw_transport_mpc_ext IMPLEMENTATION.
                            i_column2 = 'NameTextc'
                            i_search_supported = abap_true ).
 
+    set_description_field_for_user( ).
 
   ENDMETHOD.
+
+  METHOD set_description_field_for_user.
+
+    DATA(lo_entity) = model->get_entity_type( 'User' ).
+    DATA(lo_property) = lo_entity->get_property( 'Bname' ).
+    DATA(lo_annotation) = lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( /iwbep/if_mgw_med_odata_types=>gc_sap_namespace ).
+    lo_annotation->add( iv_key = 'text' iv_value = 'NameTextc').
+
+
+
+  ENDMETHOD.
+
+
 
 
   METHOD set_date_format_for_property.

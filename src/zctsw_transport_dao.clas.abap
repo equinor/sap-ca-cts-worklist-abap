@@ -617,12 +617,14 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
       SORT lt_change_list.
       DELETE ADJACENT DUPLICATES FROM lt_change_list.
 
-
       LOOP AT lt_change_list INTO lv_change.
-        ls_range-low = |{ lv_change }*|.
-        ls_range-sign = 'I'.
-        ls_range-option = 'CP'.
-        APPEND ls_range TO r_change.
+        FIND REGEX '(CHG\d+)|(C\d+)' IN lv_change.
+        IF sy-subrc = 0.
+          ls_range-low = |{ lv_change }*|.
+          ls_range-sign = 'I'.
+          ls_range-option = 'CP'.
+          APPEND ls_range TO r_change.
+        ENDIF.
       ENDLOOP.
 
       SELECT  b~trkorr

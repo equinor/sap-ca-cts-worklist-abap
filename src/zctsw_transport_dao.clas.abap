@@ -53,6 +53,7 @@ CLASS zctsw_transport_dao DEFINITION
         !it_transports       TYPE cnvc_scwb_tr OPTIONAL
         !it_dates            TYPE trgr_date OPTIONAL
         !it_text             TYPE /iwbep/t_cod_select_options OPTIONAL
+        !i_expand_selection  TYPE abap_bool
       RETURNING
         VALUE(rt_transports) TYPE zctsw_transport_t .
     METHODS get_tasks
@@ -587,62 +588,64 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
       AND   as4date IN it_dates
       AND   as4text IN it_text.
 
-    " Get requests where user has a task
-    IF NOT it_users IS INITIAL.
-      SELECT  b~trkorr
-              b~trfunction
-              b~trstatus
-              b~tarsystem
-              b~as4user
-              b~as4date
-              b~as4time
-              b~strkorr
-              b~as4text
-              b~client
-        FROM e070v AS a   "Task                    "#EC CI_SUBRC
-        JOIN e070v AS b   "Request
-         ON   a~strkorr = b~trkorr
-        APPENDING CORRESPONDING FIELDS OF TABLE rt_transports
-        WHERE   a~as4user IN it_users
-        AND     a~trkorr  IN it_transports
-        AND     a~as4date IN it_dates
-        AND     b~as4text IN it_text.
-    ENDIF.
+    IF i_expand_selection = abap_true.
+      " Get requests where user has a task
+      IF NOT it_users IS INITIAL.
+        SELECT  b~trkorr
+                b~trfunction
+                b~trstatus
+                b~tarsystem
+                b~as4user
+                b~as4date
+                b~as4time
+                b~strkorr
+                b~as4text
+                b~client
+          FROM e070v AS a   "Task                    "#EC CI_SUBRC
+          JOIN e070v AS b   "Request
+           ON   a~strkorr = b~trkorr
+          APPENDING CORRESPONDING FIELDS OF TABLE rt_transports
+          WHERE   a~as4user IN it_users
+          AND     a~trkorr  IN it_transports
+          AND     a~as4date IN it_dates
+          AND     b~as4text IN it_text.
+      ENDIF.
 
-    "Expand selection to all request belonging to same change
-    IF NOT rt_transports IS INITIAL.
-      LOOP AT rt_transports INTO ls_transport.
-        APPEND get_change_from_description( ls_transport-as4text ) TO lt_change_list.
-      ENDLOOP.
-      SORT lt_change_list.
-      DELETE ADJACENT DUPLICATES FROM lt_change_list.
+      "Expand selection to all request belonging to same change
+      IF NOT rt_transports IS INITIAL.
+        LOOP AT rt_transports INTO ls_transport.
+          APPEND get_change_from_description( ls_transport-as4text ) TO lt_change_list.
+        ENDLOOP.
+        SORT lt_change_list.
+        DELETE ADJACENT DUPLICATES FROM lt_change_list.
 
-      LOOP AT lt_change_list INTO lv_change.
-        FIND REGEX '(CHG\d+)|(C\d+)' IN lv_change.
-        IF sy-subrc = 0.
-          ls_range-low = |{ lv_change }*|.
-          ls_range-sign = 'I'.
-          ls_range-option = 'CP'.
-          APPEND ls_range TO r_change.
-        ENDIF.
-      ENDLOOP.
+        LOOP AT lt_change_list INTO lv_change.
+          FIND REGEX '(CHG\d+)|(C\d+)' IN lv_change.
+          IF sy-subrc = 0.
+            ls_range-low = |{ lv_change }*|.
+            ls_range-sign = 'I'.
+            ls_range-option = 'CP'.
+            APPEND ls_range TO r_change.
+          ENDIF.
+        ENDLOOP.
 
-      SELECT  b~trkorr
-              b~trfunction
-              b~trstatus
-              b~tarsystem
-              b~as4user
-              b~as4date
-              b~as4time
-              b~strkorr
-              b~as4text
-              b~client
-        FROM e070v AS a   "Task                    "#EC CI_SUBRC
-        JOIN e070v AS b   "Request
-         ON   a~strkorr = b~trkorr
-        APPENDING CORRESPONDING FIELDS OF TABLE rt_transports
-        WHERE   a~as4date IN it_dates
-        AND     a~as4text IN r_change.
+        SELECT  b~trkorr
+                b~trfunction
+                b~trstatus
+                b~tarsystem
+                b~as4user
+                b~as4date
+                b~as4time
+                b~strkorr
+                b~as4text
+                b~client
+          FROM e070v AS a   "Task                    "#EC CI_SUBRC
+          JOIN e070v AS b   "Request
+           ON   a~strkorr = b~trkorr
+          APPENDING CORRESPONDING FIELDS OF TABLE rt_transports
+          WHERE   a~as4date IN it_dates
+          AND     a~as4text IN r_change.
+      ENDIF.
     ENDIF.
 
     "Delete duplicates

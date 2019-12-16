@@ -297,7 +297,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
       APPEND ls_transport_line TO lt_transports_range.
     ENDLOOP.
 
-    DATA(lt_transports) = lo_dao->get_requests( it_transports = lt_transports_range ).
+    DATA(lt_transports) = lo_dao->get_requests( it_transports = lt_transports_range i_expand_selection = abap_false ).
     IF NOT lt_transports IS INITIAL.
       er_entity = lt_transports[ 1 ].
     ENDIF.
@@ -352,7 +352,11 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
         ct_date_range  = lt_dates ).
     ENDIF.
 
-    APPEND LINES OF lo_dao->get_requests( it_transports = lt_trkorr it_users = lt_users it_dates = lt_dates it_text = lt_text ) TO et_entityset.
+    APPEND LINES OF lo_dao->get_requests( it_transports = lt_trkorr
+                                          it_users = lt_users
+                                          it_dates = lt_dates
+                                          it_text = lt_text
+                                          i_expand_selection = abap_true ) TO et_entityset.
 
     "Paging
     /iwbep/cl_mgw_data_util=>paging(

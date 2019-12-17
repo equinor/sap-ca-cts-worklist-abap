@@ -317,6 +317,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
           lt_users  TYPE trgr_user,
           lt_dates  TYPE trgr_date,
           lt_text   TYPE /iwbep/t_cod_select_options,
+          lt_change TYPE /iwbep/t_cod_select_options,
           lt_trkorr TYPE cnvc_scwb_tr,
           ls_filter TYPE /iwbep/s_mgw_select_option.
 
@@ -343,8 +344,18 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
       lt_text = CORRESPONDING #( ls_filter-select_options ).
     ENDIF.
 
+    READ TABLE it_filter_select_options WITH KEY property = 'Change' INTO ls_filter.
+    IF sy-subrc = 0.
+      lt_change = CORRESPONDING #( ls_filter-select_options ).
+      LOOP AT lt_change INTO DATA(ls_change).
+        ls_change-option = 'CP'.
+        ls_change-low = ls_change-low && '*'.
+        MODIFY lt_change FROM ls_change.
+      ENDLOOP.
+    ENDIF.
 
-    IF lt_dates IS INITIAL AND lt_users IS INITIAL AND lt_text IS INITIAL.
+
+    IF lt_dates IS INITIAL AND lt_users IS INITIAL AND lt_text IS INITIAL and lt_change is INITIAL.
       set_date_range(
       EXPORTING
         i_since_x_days = 30
@@ -356,6 +367,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
                                           it_users = lt_users
                                           it_dates = lt_dates
                                           it_text = lt_text
+                                          it_change = lt_change
                                           i_expand_selection = abap_true ) TO et_entityset.
 
     "Paging

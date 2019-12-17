@@ -53,6 +53,7 @@ CLASS zctsw_transport_dao DEFINITION
         !it_transports       TYPE cnvc_scwb_tr OPTIONAL
         !it_dates            TYPE trgr_date OPTIONAL
         !it_text             TYPE /iwbep/t_cod_select_options OPTIONAL
+        !it_change           TYPE /iwbep/t_cod_select_options OPTIONAL
         !i_expand_selection  TYPE abap_bool
       RETURNING
         VALUE(rt_transports) TYPE zctsw_transport_t .
@@ -586,7 +587,8 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
       AND   as4user IN it_users
       AND   trkorr IN it_transports
       AND   as4date IN it_dates
-      AND   as4text IN it_text.
+      AND   as4text IN it_text
+      AND   as4text IN it_change.
 
     IF i_expand_selection = abap_true.
       " Get requests where user has a task

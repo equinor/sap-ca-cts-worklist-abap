@@ -398,6 +398,7 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
     WHERE a~trkorr IN it_transports
     AND   obj_name IN it_objects.
 
+
     "Fill ADT link and description for objects
     LOOP AT rt_objects INTO DATA(ls_object).
       get_adt_url_for_object(
@@ -505,6 +506,9 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
       MODIFY rt_objects FROM ls_object.
 
     ENDLOOP.
+
+    SORT rt_objects BY obj_name.
+    DELETE ADJACENT DUPLICATES FROM rt_objects COMPARING obj_name.
 
 
   ENDMETHOD.

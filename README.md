@@ -1,3 +1,3 @@
-# ctsworklist_local
+# CTS Worklist
 
-CTS Worklist
+A UI5 app for working with transports and objects

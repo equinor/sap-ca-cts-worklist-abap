@@ -43,15 +43,15 @@ CLASS zctsw_transport_dao DEFINITION
     METHODS constructor .
     METHODS get_modifiable_transports
       IMPORTING
-        !it_users            TYPE trgr_user OPTIONAL
+        !it_users            TYPE zctsw_user_range_t OPTIONAL
         !it_transports       TYPE zctsw_transport_range_t OPTIONAL
       RETURNING
         VALUE(rt_transports) TYPE zctsw_transport_t .
     METHODS get_requests
       IMPORTING
-        !it_users            TYPE trgr_user OPTIONAL
+        !it_users            TYPE zctsw_user_range_t OPTIONAL
         !it_transports       TYPE zctsw_transport_range_t OPTIONAL
-        !it_dates            TYPE trgr_date OPTIONAL
+        !it_dates            TYPE zctsw_date_range_t OPTIONAL
         !it_text             TYPE /iwbep/t_cod_select_options OPTIONAL
         !it_change           TYPE /iwbep/t_cod_select_options OPTIONAL
         !i_expand_selection  TYPE abap_bool
@@ -60,14 +60,14 @@ CLASS zctsw_transport_dao DEFINITION
     METHODS get_tasks
       IMPORTING
         !i_parent_request    TYPE trkorr OPTIONAL
-        !it_users            TYPE trgr_user OPTIONAL
+        !it_users            TYPE zctsw_user_range_t OPTIONAL
         !it_transports       TYPE zctsw_transport_range_t OPTIONAL
-        !it_dates            TYPE trgr_date OPTIONAL
+        !it_dates            TYPE zctsw_date_range_t OPTIONAL
       RETURNING
         VALUE(rt_transports) TYPE zctsw_transport_t .
     METHODS get_released_transports
       IMPORTING
-        !it_users            TYPE trgr_user OPTIONAL
+        !it_users            TYPE zctsw_user_range_t OPTIONAL
         !it_transports       TYPE zctsw_transport_range_t OPTIONAL
       RETURNING
         VALUE(rt_transports) TYPE zctsw_transport_t .

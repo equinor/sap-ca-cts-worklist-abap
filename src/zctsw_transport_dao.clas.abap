@@ -339,7 +339,7 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
       ENDIF.
       ls_transport-sysid = sy-sysid.
       ls_transport-user_name = to_upper( get_user_shortname(  ls_transport-as4user ) ).
-      ls_transport-user_full_name = cl_fitv_gos=>get_user_fullname( ls_transport-as4user ).
+      ls_transport-user_full_name = get_user_full_name( ls_transport-as4user ).
       CASE ls_transport-trstatus.
         WHEN 'O' OR 'R' OR 'N'.
           ls_transport-task_released = abap_true.

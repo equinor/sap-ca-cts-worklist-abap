@@ -389,7 +389,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 
   METHOD set_date_range.
 
-    DATA: ls_date   TYPE trgs_datum.
+    DATA: ls_date   TYPE zctsw_date_range_s.
 
     ls_date-option = 'BT'.
     ls_date-sign   = 'I'.

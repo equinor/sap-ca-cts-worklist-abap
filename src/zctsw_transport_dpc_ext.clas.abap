@@ -34,7 +34,7 @@ CLASS zctsw_transport_dpc_ext DEFINITION
       IMPORTING
         i_since_x_days TYPE i
       CHANGING
-        ct_date_range  TYPE trgr_date.
+        ct_date_range  TYPE zctsw_date_range_t.
     METHODS sort_and_compress
       CHANGING
         ct_entityset TYPE zctsw_transport_mpc=>tt_object.
@@ -201,10 +201,10 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 *-----------------------------------------------------------------------
 
     DATA: lo_dao            TYPE REF TO zctsw_transport_dao,
-          ls_transport_line TYPE cnvc_scwb_trs,
-          lt_transports     TYPE cnvc_scwb_tr,
+          ls_transport_line TYPE zctsw_transport_range_s,
+          lt_transports     TYPE zctsw_transport_range_t,
           ls_filter         TYPE /iwbep/s_mgw_select_option,
-          lt_is_source      TYPE fkk_sg_range_xfield_tab,
+          lt_is_source      TYPE zctsw_checkbox_range_t,
           lt_objects        TYPE /iwbep/t_cod_select_options.
 
     CREATE OBJECT lo_dao.
@@ -284,8 +284,8 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 *-----------------------------------------------------------------------
 
     DATA: lo_dao              TYPE REF TO zctsw_transport_dao,
-          lt_transports_range TYPE cnvc_scwb_tr,
-          ls_transport_line   TYPE cnvc_scwb_trs.
+          lt_transports_range TYPE zctsw_transport_range_t,
+          ls_transport_line   TYPE zctsw_transport_range_s.
 
     CREATE OBJECT lo_dao.
 
@@ -314,11 +314,11 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 *-----------------------------------------------------------------------
 
     DATA: lo_dao    TYPE REF TO zctsw_transport_dao,
-          lt_users  TYPE trgr_user,
-          lt_dates  TYPE trgr_date,
+          lt_users  TYPE zctsw_user_range_t,
+          lt_dates  TYPE zctsw_date_range_t,
           lt_text   TYPE /iwbep/t_cod_select_options,
           lt_change TYPE /iwbep/t_cod_select_options,
-          lt_trkorr TYPE cnvc_scwb_tr,
+          lt_trkorr TYPE zctsw_transport_range_t,
           ls_filter TYPE /iwbep/s_mgw_select_option.
 
     CREATE OBJECT lo_dao.
@@ -355,7 +355,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
     ENDIF.
 
 
-    IF lt_dates IS INITIAL AND lt_users IS INITIAL AND lt_text IS INITIAL and lt_change is INITIAL.
+    IF lt_dates IS INITIAL AND lt_users IS INITIAL AND lt_text IS INITIAL AND lt_change IS INITIAL AND lt_trkorr IS INITIAL.
       set_date_range(
       EXPORTING
         i_since_x_days = 30
@@ -418,8 +418,8 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 
 
     DATA: lo_dao            TYPE REF TO zctsw_transport_dao,
-          r_transports      TYPE cnvc_scwb_tr,
-          ls_transport_line TYPE cnvc_scwb_trs.
+          r_transports      TYPE zctsw_transport_range_t,
+          ls_transport_line TYPE zctsw_transport_range_s.
 
     CREATE OBJECT lo_dao.
 
@@ -448,11 +448,11 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 *-----------------------------------------------------------------------
 
     DATA: lo_dao            TYPE REF TO zctsw_transport_dao,
-          lt_transport_key  TYPE  cnvc_scwb_tr,
-          ls_transport_key  TYPE cnvc_scwb_trs,
+          lt_transport_key  TYPE zctsw_transport_range_t,
+          ls_transport_key  TYPE zctsw_transport_range_s,
           lv_parent_request TYPE trkorr,
-          lt_dates          TYPE trgr_date,
-          lt_users          TYPE trgr_user,
+          lt_dates          TYPE zctsw_date_range_t,
+          lt_users          TYPE zctsw_user_range_t,
           ls_filter         TYPE /iwbep/s_mgw_select_option.
 
     CREATE OBJECT lo_dao.
@@ -532,7 +532,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
   METHOD userset_get_entityset.
 
     DATA: ls_filter        TYPE /iwbep/s_mgw_select_option,
-          lt_user_range    TYPE /pra/tt_pn_r_user,
+          lt_user_range    TYPE zctsw_user_range_t,
           ls_user_range    LIKE LINE OF lt_user_range,
           lv_search_string TYPE string.
 

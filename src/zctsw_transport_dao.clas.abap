@@ -44,13 +44,13 @@ CLASS zctsw_transport_dao DEFINITION
     METHODS get_modifiable_transports
       IMPORTING
         !it_users            TYPE trgr_user OPTIONAL
-        !it_transports       TYPE cnvc_scwb_tr OPTIONAL
+        !it_transports       TYPE zctsw_transport_range_t OPTIONAL
       RETURNING
         VALUE(rt_transports) TYPE zctsw_transport_t .
     METHODS get_requests
       IMPORTING
         !it_users            TYPE trgr_user OPTIONAL
-        !it_transports       TYPE cnvc_scwb_tr OPTIONAL
+        !it_transports       TYPE zctsw_transport_range_t OPTIONAL
         !it_dates            TYPE trgr_date OPTIONAL
         !it_text             TYPE /iwbep/t_cod_select_options OPTIONAL
         !it_change           TYPE /iwbep/t_cod_select_options OPTIONAL
@@ -61,19 +61,19 @@ CLASS zctsw_transport_dao DEFINITION
       IMPORTING
         !i_parent_request    TYPE trkorr OPTIONAL
         !it_users            TYPE trgr_user OPTIONAL
-        !it_transports       TYPE cnvc_scwb_tr OPTIONAL
+        !it_transports       TYPE zctsw_transport_range_t OPTIONAL
         !it_dates            TYPE trgr_date OPTIONAL
       RETURNING
         VALUE(rt_transports) TYPE zctsw_transport_t .
     METHODS get_released_transports
       IMPORTING
         !it_users            TYPE trgr_user OPTIONAL
-        !it_transports       TYPE cnvc_scwb_tr OPTIONAL
+        !it_transports       TYPE zctsw_transport_range_t OPTIONAL
       RETURNING
         VALUE(rt_transports) TYPE zctsw_transport_t .
     METHODS get_objects
       IMPORTING
-        !it_transports    TYPE cnvc_scwb_tr OPTIONAL
+        !it_transports    TYPE zctsw_transport_range_t OPTIONAL
         !it_objects       TYPE /iwbep/t_cod_select_options OPTIONAL
       RETURNING
         VALUE(rt_objects) TYPE zctsw_object_t .
@@ -839,19 +839,10 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
       EXPORTING
         iv_trkorr                   = i_trkorr
         iv_dialog                   = ' '
-*       iv_as_background_job        = ' '
         iv_success_message          = ' '
-*       iv_without_objects_check    = ' '
         iv_called_by_adt            = 'X'
-*       iv_called_by_perforce       = ' '
-*       iv_without_docu             = ' '
-*       iv_without_locking          = ' '
         iv_display_export_log       = ' '    " Boolean
-*       iv_ignore_warnings          = ' '
-*       iv_simulation               = ' '
       IMPORTING
-*       es_request                  =     " Request
-*       et_deleted_tasks            =
         et_messages                 = lt_messages
       EXCEPTIONS
         cts_initialization_failure  = 1

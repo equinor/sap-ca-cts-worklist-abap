@@ -3,7 +3,7 @@
 A UI5 app for working with transports and objects. This repository contains the  OData service and ABAP code for the application. For the UI5 application please see https://github.com/blahbap/cts-worklist/
 
 ## Installation 
-Install using abapGit
+Install using abapGit into package $CTSWORKLIST
 
 ## Activate the following services in SICF 
 

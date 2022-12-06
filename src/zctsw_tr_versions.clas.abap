@@ -150,7 +150,6 @@ CLASS ZCTSW_TR_VERSIONS IMPLEMENTATION.
       INSERT ls_version INTO TABLE lt_version_info.
     ENDLOOP.
 
-    SORT lt_version_info BY versno DESCENDING.
     LOOP AT lt_version_info ASSIGNING FIELD-SYMBOL(<fs_local_version>).
       IF ( sy-tabix = 1 ).
         ls_latest_version = <fs_local_version>.

@@ -1,41 +1,41 @@
-class ZCTSW_TR_VERSIONS definition
-  public
-  final
-  create public .
+CLASS zctsw_tr_versions DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
 
-public section.
+  PUBLIC SECTION.
 
-  class-methods TR_FROM_DIFFERENT_CHANGE
-    importing
-      !I_DESCRIPTION_TR1 type AS4TEXT
-      !I_DESCRIPTION_TR2 type AS4TEXT
-    returning
-      value(R_CHANGE_DIFFERS) type ABAP_BOOL .
-  methods COMPARE_TEXT_CONTENT
-    importing
-      !I_FILE1_CONTENT type STRING
-      !I_FILE2_CONTENT type STRING
-      !I_FILE1_VERSION type IF_WB_OBJECT_VERSION=>TY_WB_OBJECT_VERSION optional
-      !I_FILE2_VERSION type IF_WB_OBJECT_VERSION=>TY_WB_OBJECT_VERSION optional
-      !I_OBJECT_NAME type TROBJ_NAME optional
-    returning
-      value(R_COMPARE_TEXT) type STRING .
-  methods READ_VERSION_FILE
-    importing
-      !L_OBJECT_TYPE type TROBJTYPE default 'REPS'
-      !L_OBJECT_NAME type TROBJ_NAME default 'ROIO_RT_CHANGE_DOCUMENTS'
-      !I_VERSION type LS_VERSION
-    exporting
-      !E_VERSION_INFO type IF_WB_OBJECT_VERSION=>TY_WB_OBJECT_VERSION           " Version 00000 is active version
-    returning
-      value(R_FILE_CONTENT) type STRING .
-  methods FIND_LAST_CHANGE_VERSIONS
-    importing
-      !L_OBJECT_TYPE type ZCTSW_COMPARISON_S-OBJECT_TYPE
-      !L_OBJECT_NAME type ZCTSW_COMPARISON_S-OBJECT_NAME
-    exporting
-      !E_VERSION_PREVIOUS_CHANGE type ZCTSW_COMPARISON_S-VERSION_RIGHT
-      !E_VERSION_LATEST type ZCTSW_COMPARISON_S-VERSION_LEFT .
+    CLASS-METHODS tr_from_different_change
+      IMPORTING
+        !i_description_tr1      TYPE as4text
+        !i_description_tr2      TYPE as4text
+      RETURNING
+        VALUE(r_change_differs) TYPE abap_bool .
+    METHODS compare_text_content
+      IMPORTING
+        !i_file1_content      TYPE string
+        !i_file2_content      TYPE string
+        !i_file1_version      TYPE if_wb_object_version=>ty_wb_object_version OPTIONAL
+        !i_file2_version      TYPE if_wb_object_version=>ty_wb_object_version OPTIONAL
+        !i_object_name        TYPE trobj_name OPTIONAL
+      RETURNING
+        VALUE(r_compare_text) TYPE string .
+    METHODS read_version_file
+      IMPORTING
+        !l_object_type        TYPE trobjtype DEFAULT 'REPS'
+        !l_object_name        TYPE trobj_name DEFAULT 'ROIO_RT_CHANGE_DOCUMENTS'
+        !i_version            TYPE ls_version
+      EXPORTING
+        !e_version_info       TYPE if_wb_object_version=>ty_wb_object_version           " Version 00000 is active version
+      RETURNING
+        VALUE(r_file_content) TYPE string .
+    METHODS find_last_change_versions
+      IMPORTING
+        !l_object_type             TYPE zctsw_comparison_s-object_type
+        !l_object_name             TYPE zctsw_comparison_s-object_name
+      EXPORTING
+        !e_version_previous_change TYPE zctsw_comparison_s-version_right
+        !e_version_latest          TYPE zctsw_comparison_s-version_left .
   PROTECTED SECTION.
   PRIVATE SECTION.
 
@@ -55,7 +55,7 @@ ENDCLASS.
 CLASS ZCTSW_TR_VERSIONS IMPLEMENTATION.
 
 
-  METHOD COMPARE_TEXT_CONTENT.
+  METHOD compare_text_content.
 *-----------------------------------------------------------------------
 * Compare two files represented as 2 string texts.
 *-----------------------------------------------------------------------
@@ -75,17 +75,17 @@ CLASS ZCTSW_TR_VERSIONS IMPLEMENTATION.
     ls_page_difference-changed_by = i_file1_version-author.
     ls_page_difference-filename = |{ i_object_name } @@@ LOCAL #{ i_file1_version-versno } - "{ i_file1_version-trequest_text }"   @@@ REMOTE #{ i_file2_version-versno } - "{ i_file2_version-trequest_text }"|.
 
-    if ( i_file2_content is initial and i_file1_content is not initial ).
-        ls_page_difference-lstate = 'A'.
-    elseif ( i_file1_content is initial and i_file2_content is not initial ).
-        ls_page_difference-rstate = 'A'.
-    elseif ( i_file1_content = i_file2_content ).
-        ls_page_difference-lstate = '='.    " This will not be shown in renderer as modified
-        ls_page_difference-rstate = '='.
-    else.
-        ls_page_difference-lstate = 'M'.
-        ls_page_difference-rstate = 'M'.
-    endif.
+    IF ( i_file2_content IS INITIAL AND i_file1_content IS NOT INITIAL ).
+      ls_page_difference-lstate = 'A'.
+    ELSEIF ( i_file1_content IS INITIAL AND i_file2_content IS NOT INITIAL ).
+      ls_page_difference-rstate = 'A'.
+    ELSEIF ( i_file1_content = i_file2_content ).
+      ls_page_difference-lstate = '='.    " This will not be shown in renderer as modified
+      ls_page_difference-rstate = '='.
+    ELSE.
+      ls_page_difference-lstate = 'M'.
+      ls_page_difference-rstate = 'M'.
+    ENDIF.
 
     DATA(lo_html) = zcl_cts_compare_code=>render_diff_public( ls_page_difference ).
 
@@ -94,7 +94,7 @@ CLASS ZCTSW_TR_VERSIONS IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD CONVERT_TO_XSTRING.
+  METHOD convert_to_xstring.
 *-----------------------------------------------------------------------
 * Convert a single string into xstring.
 *-----------------------------------------------------------------------
@@ -120,7 +120,7 @@ CLASS ZCTSW_TR_VERSIONS IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD FIND_LAST_CHANGE_VERSIONS.
+  METHOD find_last_change_versions.
 *-----------------------------------------------------------------------
 * Find the latest version and previous version from other change.
 * Search by comparing first string with change number.
@@ -150,10 +150,19 @@ CLASS ZCTSW_TR_VERSIONS IMPLEMENTATION.
       INSERT ls_version INTO TABLE lt_version_info.
     ENDLOOP.
 
+*   At this point, versions are sorted by creation time descending. If the transport is released
+*   version 0 will be listed 2nd from the top of the list, and it will not be related to a transport
+*   number. We need to remove it from the list, as it is not valid as a comparison object (the lastest
+*   version will be used).
+*
+*   For an unreleased transport, version 0 is the latest version and it is related to a transport. The
+*   current sorting is correct.
+    DELETE lt_version_info WHERE versno = '0000' AND korrnum IS INITIAL.
+
     LOOP AT lt_version_info ASSIGNING FIELD-SYMBOL(<fs_local_version>).
       IF ( sy-tabix = 1 ).
         ls_latest_version = <fs_local_version>.
-         e_version_latest = ls_latest_version-versno.
+        e_version_latest = ls_latest_version-versno.
       ELSEIF ( ls_previous_change_version IS INITIAL ).
         IF ( tr_from_different_change(
                 i_description_tr1 = ls_latest_version-trequest_text
@@ -171,7 +180,7 @@ CLASS ZCTSW_TR_VERSIONS IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD READ_VERSION_FILE.
+  METHOD read_version_file.
 *-----------------------------------------------------------------------
 * Try to read file version.
 *-----------------------------------------------------------------------
@@ -213,7 +222,7 @@ CLASS ZCTSW_TR_VERSIONS IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD TR_FROM_DIFFERENT_CHANGE.
+  METHOD tr_from_different_change.
 *-----------------------------------------------------------------------
 * Check if there is different change based on transport request TR
 * description.
@@ -241,13 +250,13 @@ CLASS ZCTSW_TR_VERSIONS IMPLEMENTATION.
     DATA(l_change1_nr) = l_description_tr1(10).
     DATA(l_change2_nr) = l_description_tr2(10).
 
-    translate l_change1_nr to UPPER CASE.
-    translate l_change2_nr to UPPER CASE.
+    TRANSLATE l_change1_nr TO UPPER CASE.
+    TRANSLATE l_change2_nr TO UPPER CASE.
 
-    if ( i_description_tr1 IS INITIAL and i_description_tr2 is initial ).
-        r_change_differs = abap_true.
-        return.
-    endif.
+    IF ( i_description_tr1 IS INITIAL AND i_description_tr2 IS INITIAL ).
+      r_change_differs = abap_true.
+      RETURN.
+    ENDIF.
     IF ( l_change1_nr <> l_change2_nr ).
       r_change_differs = abap_true.
     ELSE.

@@ -120,6 +120,9 @@ CLASS zctsw_transport_dao DEFINITION
 
   PROTECTED SECTION.
   PRIVATE SECTION.
+    " The regex that will be used to collect and group transports in the view. The regex should be changed
+    " to match the conventions for naming transports in your company
+    CONSTANTS gc_grouping_regex TYPE string VALUE '(CHG\d+)|(C\d+)' ##NO_TEXT.
 
     METHODS get_user_shortname
       IMPORTING
@@ -626,7 +629,7 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
         DELETE ADJACENT DUPLICATES FROM lt_change_list.
 
         LOOP AT lt_change_list INTO lv_change.
-          FIND REGEX '(CHG\d+)|(C\d+)' IN lv_change.
+          FIND REGEX gc_grouping_regex IN lv_change.
           IF sy-subrc = 0.
             ls_range-low = |{ lv_change }*|.
             ls_range-sign = 'I'.

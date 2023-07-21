@@ -4,6 +4,9 @@ CLASS zctsw_transport_dao DEFINITION
   CREATE PUBLIC .
 
   PUBLIC SECTION.
+    " The regex that will be used to collect and group transports in the view. The regex should be changed
+    " to match the conventions for naming transports in your company
+    CONSTANTS gc_grouping_regex TYPE string VALUE '(CHG\d+)|(C\d+)|(S\s\d+)' ##NO_TEXT.
 
     TYPES:
       BEGIN OF ty_user_full_name,
@@ -120,9 +123,7 @@ CLASS zctsw_transport_dao DEFINITION
 
   PROTECTED SECTION.
   PRIVATE SECTION.
-    " The regex that will be used to collect and group transports in the view. The regex should be changed
-    " to match the conventions for naming transports in your company
-    CONSTANTS gc_grouping_regex TYPE string VALUE '(CHG\d+)|(C\d+)' ##NO_TEXT.
+
 
     METHODS get_user_shortname
       IMPORTING
@@ -229,20 +230,20 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
     DATA: ls_results TYPE match_result.
 
     TRY.
-        FIND REGEX 'CHG\d*' IN i_as4text RESULTS ls_results IGNORING CASE.
+        FIND PCRE gc_grouping_regex IN i_as4text RESULTS ls_results IGNORING CASE.
         IF NOT ls_results IS INITIAL.
           r_change = i_as4text+ls_results-offset(ls_results-length).
         ENDIF.
 
         IF r_change IS INITIAL.
-          FIND REGEX 'C\d*' IN i_as4text RESULTS ls_results IGNORING CASE.
+          FIND PCRE gc_grouping_regex IN i_as4text RESULTS ls_results IGNORING CASE.
           IF NOT ls_results IS INITIAL.
             r_change = i_as4text+ls_results-offset(ls_results-length).
           ENDIF.
         ENDIF.
 
         IF r_change IS INITIAL.
-          FIND REGEX 'CR\d*' IN i_as4text RESULTS ls_results IGNORING CASE.
+          FIND PCRE gc_grouping_regex IN i_as4text RESULTS ls_results IGNORING CASE.
           IF NOT ls_results IS INITIAL.
             r_change = i_as4text+ls_results-offset(ls_results-length).
           ENDIF.
@@ -562,7 +563,7 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
 *-----------------------------------------------------------------------
 
     TYPES: BEGIN OF ty_change_list,
-             change(10) TYPE c,
+             change(30) TYPE c,
            END OF ty_change_list.
 
     TYPES: ty_change_list_tab TYPE STANDARD TABLE OF ty_change_list.
@@ -628,8 +629,8 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
         SORT lt_change_list.
         DELETE ADJACENT DUPLICATES FROM lt_change_list.
 
-        LOOP AT lt_change_list INTO lv_change.
-          FIND REGEX gc_grouping_regex IN lv_change.
+        LOOP AT lt_change_list INTO lv_change .
+          FIND PCRE gc_grouping_regex IN lv_change.
           IF sy-subrc = 0.
             ls_range-low = |{ lv_change }*|.
             ls_range-sign = 'I'.

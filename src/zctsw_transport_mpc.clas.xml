@@ -210,6 +210,36 @@
      <ENTRY>RENDERED_COMPARE_HTML</ENTRY>
      <LENGTH>132</LENGTH>
     </item>
+    <item>
+     <ID>I</ID>
+     <KEY>034</KEY>
+     <ENTRY>First name</ENTRY>
+     <LENGTH>132</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>035</KEY>
+     <ENTRY>Last name</ENTRY>
+     <LENGTH>132</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>036</KEY>
+     <ENTRY>First name</ENTRY>
+     <LENGTH>132</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>037</KEY>
+     <ENTRY>Last name</ENTRY>
+     <LENGTH>132</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>038</KEY>
+     <ENTRY>Name</ENTRY>
+     <LENGTH>132</LENGTH>
+    </item>
    </TPOOL>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
@@ -221,6 +251,11 @@
      <CMPNAME>DEFINE_ASSOCIATIONS</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>DEFINE_ASSOCIATIONS</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>DEFINE_CHANGE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>DEFINE_CHANGE</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
      <CMPNAME>DEFINE_COMPAREVERSIONS</CMPNAME>
@@ -236,6 +271,11 @@
      <CMPNAME>DEFINE_OBJECT</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>DEFINE_OBJECT</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>DEFINE_PACKAGE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>DEFINE_PACKAGE</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
      <CMPNAME>DEFINE_REQUEST</CMPNAME>

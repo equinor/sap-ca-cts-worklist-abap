@@ -44,11 +44,6 @@ CLASS zctsw_transport_dpc_ext DEFINITION
     METHODS sort_and_compress
       CHANGING
         ct_entityset TYPE zctsw_transport_mpc=>tt_object.
-    METHODS get_description_for_package
-      IMPORTING
-        i_packcage_name TYPE zctsw_package_s-package
-      RETURNING
-        VALUE(r_result) TYPE zctsw_package_s-description.
 
 ENDCLASS.
 
@@ -62,6 +57,11 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
     DATA: ls_return TYPE zctsw_transport_mpc=>ts_returncode.
 
     CASE iv_action_name.
+
+      WHEN 'Review'.
+        DATA(lt_repos) = zcl_abapgit_repo_srv=>get_instance( )->list( ).
+
+
       WHEN 'Release'.
         zctsw_transport_dao=>release_transport(
           EXPORTING
@@ -616,9 +616,12 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 
   METHOD changeset_get_entity.
 
+    DATA(lo_dao) = NEW zctsw_transport_dao( ).
+
     DATA(lt_key) = io_tech_request_context->get_keys( ).
     READ TABLE lt_key WITH KEY name = 'CHANGE_ID' INTO DATA(ls_key).
     er_entity-change_id = ls_key-value.
+    er_entity-description = lo_dao->get_description_for_change( ls_key-value ).
 
 
   ENDMETHOD.
@@ -632,66 +635,115 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 
   METHOD packageset_get_entityset.
 
-    DATA: lo_dao            TYPE REF TO zctsw_transport_dao,
-          ls_change         TYPE /iwbep/s_cod_select_option,
-          ls_filter         TYPE /iwbep/s_mgw_select_option,
-          lt_is_source      TYPE zctsw_checkbox_range_t,
-          lt_changes        TYPE /iwbep/t_cod_select_options,
-          ls_key            TYPE /iwbep/s_mgw_name_value_pair,
-          ls_transport_line TYPE zctsw_transport_range_s,
-          lt_transports     TYPE zctsw_transport_range_t,
-          lt_all_objects    TYPE zctsw_object_t.
+
+    DATA: lo_dao             TYPE REF TO zctsw_transport_dao,
+          ls_change          TYPE /iwbep/s_cod_select_option,
+          lt_changes         TYPE /iwbep/t_cod_select_options,
+          ls_key             TYPE /iwbep/s_mgw_name_value_pair,
+          ls_transport_line  TYPE zctsw_transport_range_s,
+          lt_transports      TYPE zctsw_transport_range_t,
+          lt_all_objects     TYPE zctsw_object_t,
+          ls_filter          TYPE /iwbep/s_mgw_select_option,
+          lt_packages_filter TYPE /iwbep/t_cod_select_options,
+          ls_entity          TYPE  zctsw_transport_mpc=>ts_package.
+
 
 
     CREATE OBJECT lo_dao.
+    DATA(lt_filters) = io_tech_request_context->get_filter( )->get_filter_select_options( ).
 
     IF NOT it_key_tab IS INITIAL.
-      "Handle request for objects per change
+
       LOOP AT it_key_tab INTO ls_key WHERE name = 'ChangeId' .
         ls_change-sign = 'I'.
         ls_change-option = 'CP'.
         ls_change-low = ls_key-value && '*'.
         APPEND ls_change TO lt_changes.
       ENDLOOP.
-    ENDIF.
 
 
-    IF NOT lt_changes IS INITIAL.
-      DATA(lt_transports_for_change) = lo_dao->get_requests( it_change            = lt_changes
-                                                             i_expand_selection   = abap_true ).
-      LOOP AT lt_transports_for_change INTO DATA(ls_transport_for_change).
-        ls_transport_line-sign = 'I'.
-        ls_transport_line-option = 'EQ'.
-        ls_transport_line-low = ls_transport_for_change-trkorr.
-        APPEND ls_transport_line TO lt_transports.
+      IF NOT lt_changes IS INITIAL.
+        DATA(lt_transports_for_change) = lo_dao->get_requests( it_change            = lt_changes
+                                                               i_expand_selection   = abap_true ).
+        LOOP AT lt_transports_for_change INTO DATA(ls_transport_for_change).
+          ls_transport_line-sign = 'I'.
+          ls_transport_line-option = 'EQ'.
+          ls_transport_line-low = ls_transport_for_change-trkorr.
+          APPEND ls_transport_line TO lt_transports.
+        ENDLOOP.
+      ENDIF.
+
+      IF NOT lt_transports IS INITIAL.
+        APPEND LINES OF lo_dao->get_objects( it_transports = lt_transports ) TO lt_all_objects.
+      ENDIF.
+
+      DATA: ls_package TYPE zctsw_package_s,
+            ls_object  TYPE zctsw_object.
+
+      IF NOT lt_filters IS INITIAL.
+        "Get all packages containing code for the the specific change
+        "This case will return only all packages that contain source code objects - packages that contain only DDIC objects etc. will not be included
+        "The intention is to get a list of packages that contain code relevant for code review
+        LOOP AT lt_all_objects INTO ls_object WHERE is_source = abap_true.
+          ls_package-package = ls_object-dev_package.
+          ls_package-description = lo_dao->get_description_for_package( ls_package-package ).
+          ls_package-has_code = abap_true.
+          IF NOT ls_package-package IS INITIAL.
+            APPEND ls_package TO et_entityset.
+          ENDIF.
+        ENDLOOP.
+      ELSE.
+        "Get all packages for the specific change
+        LOOP AT lt_all_objects INTO ls_object.
+          ls_package-package = ls_object-dev_package.
+          ls_package-description = lo_dao->get_description_for_package( ls_package-package ).
+          READ TABLE lt_all_objects WITH KEY is_source = abap_true TRANSPORTING NO FIELDS.
+          IF sy-subrc = 0.
+            ls_package-has_code = abap_true.
+          ENDIF.
+          IF NOT ls_package-package IS INITIAL.
+            APPEND ls_package TO et_entityset.
+          ENDIF.
+        ENDLOOP.
+      ENDIF.
+      SORT et_entityset BY package.
+      DELETE ADJACENT DUPLICATES FROM et_entityset COMPARING package.
+
+    ELSE.
+
+      READ TABLE lt_filters WITH KEY property = 'PACKAGE' INTO ls_filter.
+      IF sy-subrc = 0.
+        lt_packages_filter = CORRESPONDING #( ls_filter-select_options ).
+        DATA(lt_packages) = lo_dao->get_packages( EXPORTING it_packages = lt_packages_filter ).
+      ENDIF.
+
+      LOOP AT lt_packages INTO DATA(ls_package_entity).
+        ls_entity-package = ls_package_entity-devclass.
+        ls_entity-description = lo_dao->get_description_for_package( ls_package_entity-devclass ).
+        APPEND ls_entity TO et_entityset.
       ENDLOOP.
+
     ENDIF.
 
-    IF NOT lt_transports IS INITIAL.
-      APPEND LINES OF lo_dao->get_objects( it_transports = lt_transports ) TO lt_all_objects.
-    ENDIF.
+    "Paging
+    /iwbep/cl_mgw_data_util=>paging(
+      EXPORTING
+        is_paging = is_paging
+      CHANGING
+        ct_data   = et_entityset ).
 
-    DATA: ls_code_object TYPE zctsw_package_s.
-    LOOP AT lt_all_objects INTO DATA(ls_object) WHERE is_source = abap_true.
-      ls_code_object-package = ls_object-dev_package.
-      ls_code_object-description = get_description_for_package( ls_code_object-package ).
-      APPEND ls_code_object TO et_entityset.
-    ENDLOOP.
-
-    SORT et_entityset BY package.
-    DELETE ADJACENT DUPLICATES FROM et_entityset COMPARING package.
-
+    "Order by
+    /iwbep/cl_mgw_data_util=>orderby(
+      EXPORTING
+        it_order = it_order
+      CHANGING
+        ct_data  = et_entityset
+    ).
 
   ENDMETHOD.
 
 
 
 
-  METHOD get_description_for_package.
-
-    SELECT SINGLE ctext INTO r_result FROM tdevct
-        WHERE devclass = i_packcage_name.
-
-  ENDMETHOD.
 
 ENDCLASS.

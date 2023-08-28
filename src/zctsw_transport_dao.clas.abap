@@ -120,6 +120,22 @@ CLASS zctsw_transport_dao DEFINITION
         !i_package             TYPE devclass
       RETURNING
         VALUE(r_app_component) TYPE ufps_posid.
+    METHODS get_description_for_package
+      IMPORTING
+        i_packcage_name TYPE zctsw_package_s-package
+      RETURNING
+        VALUE(r_result) TYPE zctsw_package_s-description.
+    METHODS get_description_for_change
+      IMPORTING
+        i_change_id     TYPE /iwbep/s_mgw_tech_pair-value
+      RETURNING
+        VALUE(r_result) TYPE zctsw_change_s-description.
+    METHODS get_packages
+      IMPORTING
+        it_packages        TYPE /iwbep/t_cod_select_options
+      RETURNING
+        VALUE(rt_packages) TYPE gakh_t_tdevc.
+
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -342,7 +358,7 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
         ls_transport-task_type = 'C'.
       ENDIF.
       ls_transport-sysid = sy-sysid.
-      ls_transport-user_name = to_upper( get_user_shortname(  ls_transport-as4user ) ).
+      ls_transport-user_name = to_upper( get_user_shortname( ls_transport-as4user ) ).
       ls_transport-user_full_name = get_user_full_name( ls_transport-as4user ).
       CASE ls_transport-trstatus.
         WHEN 'O' OR 'R' OR 'N'.
@@ -670,7 +686,7 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
         ls_transport-task_type = 'C'. "Customizing
       ENDIF.
       ls_transport-sysid = sy-sysid.
-      ls_transport-user_name = to_upper( get_user_shortname(  ls_transport-as4user ) ).
+      ls_transport-user_name = to_upper( get_user_shortname( ls_transport-as4user ) ).
       ls_transport-user_full_name = get_user_full_name( ls_transport-as4user ).
       CASE ls_transport-trstatus.
         WHEN 'O' OR 'R' OR 'N'.
@@ -758,7 +774,7 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
         ls_transport-task_type = 'C'.
       ENDIF.
       ls_transport-sysid = sy-sysid.
-      ls_transport-user_name = to_upper( get_user_shortname(  ls_transport-as4user ) ).
+      ls_transport-user_name = to_upper( get_user_shortname( ls_transport-as4user ) ).
       ls_transport-user_full_name = get_user_full_name( ls_transport-as4user ).
       CASE ls_transport-trstatus.
         WHEN 'O' OR 'R' OR 'N'.
@@ -964,6 +980,27 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
       get_app_component_for_package( lv_super_package ).
     ENDIF.
 
+
+  ENDMETHOD.
+
+  METHOD get_description_for_package.
+
+    SELECT SINGLE ctext INTO r_result FROM tdevct
+        WHERE devclass = i_packcage_name.
+
+  ENDMETHOD.
+
+
+  METHOD get_description_for_change.
+
+
+
+  ENDMETHOD.
+
+  METHOD get_packages.
+
+    SELECT * FROM tdevc INTO TABLE rt_packages
+        WHERE devclass IN it_packages.
 
   ENDMETHOD.
 

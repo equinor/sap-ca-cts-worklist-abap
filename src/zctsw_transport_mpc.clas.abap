@@ -192,8 +192,6 @@ lo_action->bind_input_structure( iv_structure_name  = 'ZCTSW_TRANSPORT_MPC=>TS_R
 lo_action = model->create_action( 'Review' ).  "#EC NOTEXT
 *Set return entity type
 lo_action->set_return_entity_type( 'ReturnCode' ). "#EC NOTEXT
-*Set HTTP method GET or POST
-lo_action->set_http_method( 'POST' ). "#EC NOTEXT
 * Set return type multiplicity
 lo_action->set_return_multiplicity( '1' ). "#EC NOTEXT
 ***********************************************************************************************************************************
@@ -1820,7 +1818,7 @@ lo_entity_set->set_filter_required( abap_false ).
 *&---------------------------------------------------------------------*
 
 
-  CONSTANTS: lc_gen_date_time TYPE timestamp VALUE '20230804063413'.                  "#EC NOTEXT
+  CONSTANTS: lc_gen_date_time TYPE timestamp VALUE '20230828113014'.                  "#EC NOTEXT
   rv_last_modified = super->get_last_modified( ).
   IF rv_last_modified LT lc_gen_date_time.
     rv_last_modified = lc_gen_date_time.
@@ -2116,6 +2114,15 @@ ls_text_element-parent_artifact_name   = 'CompareVersions'.                     
 ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
 ls_text_element-text_symbol            = '033'.              "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
+
+
+clear ls_text_element.
+ls_text_element-artifact_name          = 'HasCode'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'Package'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '039'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
   endmethod.
 
 
@@ -2150,6 +2157,18 @@ lo_property = lo_entity_type->create_property( iv_property_name = 'ChangeId' iv_
 lo_property->set_is_key( ).
 lo_property->set_type_edm_string( ).
 lo_property->set_maxlength( iv_max_length = 30 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Description' iv_abap_fieldname = 'DESCRIPTION' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 60 ). "#EC NOTEXT
 lo_property->set_creatable( abap_false ).
 lo_property->set_updatable( abap_false ).
 lo_property->set_sortable( abap_false ).
@@ -2208,6 +2227,18 @@ lo_entity_type = model->create_entity_type( iv_entity_type_name = 'Package' iv_d
 *Properties
 ***********************************************************************************************************************************
 
+lo_property = lo_entity_type->create_property( iv_property_name = 'HasCode' iv_abap_fieldname = 'HAS_CODE' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '039' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
+lo_property->set_type_edm_boolean( ).
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_true ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
 lo_property = lo_entity_type->create_property( iv_property_name = 'PackageId' iv_abap_fieldname = 'PACKAGE' ). "#EC NOTEXT
 lo_property->set_is_key( ).
 lo_property->set_type_edm_string( ).
@@ -2216,7 +2247,7 @@ lo_property->set_creatable( abap_false ).
 lo_property->set_updatable( abap_false ).
 lo_property->set_sortable( abap_false ).
 lo_property->set_nullable( abap_false ).
-lo_property->set_filterable( abap_false ).
+lo_property->set_filterable( abap_true ).
 lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
       EXPORTING
         iv_key      = 'unicode'
@@ -2251,6 +2282,6 @@ lo_entity_set->set_pageable( abap_false ).
 lo_entity_set->set_addressable( abap_false ).
 lo_entity_set->set_has_ftxt_search( abap_false ).
 lo_entity_set->set_subscribable( abap_false ).
-lo_entity_set->set_filter_required( abap_false ).
+lo_entity_set->set_filter_required( abap_true ).
   endmethod.
 ENDCLASS.

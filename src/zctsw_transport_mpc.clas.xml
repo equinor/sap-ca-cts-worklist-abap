@@ -240,6 +240,12 @@
      <ENTRY>Name</ENTRY>
      <LENGTH>132</LENGTH>
     </item>
+    <item>
+     <ID>I</ID>
+     <KEY>039</KEY>
+     <ENTRY>Boolean Variable (X = True, - = False, Space = Unknown)</ENTRY>
+     <LENGTH>132</LENGTH>
+    </item>
    </TPOOL>
    <DESCRIPTIONS>
     <SEOCOMPOTX>

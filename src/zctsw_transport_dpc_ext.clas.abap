@@ -21,6 +21,8 @@ CLASS zctsw_transport_dpc_ext DEFINITION
         REDEFINITION .
     METHODS objectset_get_entityset
         REDEFINITION .
+    METHODS packageset_get_entityset
+        REDEFINITION .
     METHODS requestset_get_entity
         REDEFINITION .
     METHODS requestset_get_entityset
@@ -33,7 +35,7 @@ CLASS zctsw_transport_dpc_ext DEFINITION
         REDEFINITION .
     METHODS userset_get_entityset
         REDEFINITION .
-    METHODS packageset_get_entityset
+    METHODS packageset_get_entity
         REDEFINITION .
   PRIVATE SECTION.
     METHODS set_date_range
@@ -342,15 +344,15 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 * CHG0134314 fstod\906575 12.03.2018 Method created
 *-----------------------------------------------------------------------
 
-    DATA: lo_dao    TYPE REF TO zctsw_transport_dao,
-          lt_users  TYPE zctsw_user_range_t,
-          lt_dates  TYPE zctsw_date_range_t,
-          lt_text   TYPE /iwbep/t_cod_select_options,
-          lt_change TYPE /iwbep/t_cod_select_options,
-          ls_change TYPE /iwbep/s_cod_select_option,
-          lt_trkorr TYPE zctsw_transport_range_t,
-          ls_filter TYPE /iwbep/s_mgw_select_option,
-          lv_change TYPE zctsw_change.
+    DATA: lo_dao             TYPE REF TO zctsw_transport_dao,
+          lt_users           TYPE zctsw_user_range_t,
+          lt_dates           TYPE zctsw_date_range_t,
+          lt_change          TYPE /iwbep/t_cod_select_options,
+          ls_change          TYPE /iwbep/s_cod_select_option,
+          lt_trkorr          TYPE zctsw_transport_range_t,
+          ls_filter          TYPE /iwbep/s_mgw_select_option,
+          lv_change          TYPE zctsw_change,
+          text_search_string TYPE as4text.
 
     CREATE OBJECT lo_dao.
 
@@ -383,7 +385,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
 
     READ TABLE it_filter_select_options WITH KEY property = 'As4text' INTO ls_filter.
     IF sy-subrc = 0.
-      lt_text = CORRESPONDING #( ls_filter-select_options ).
+      text_search_string = '%' && to_upper( ls_filter-select_options[ 1 ]-low ) && '%'.
     ENDIF.
 
     READ TABLE it_filter_select_options WITH KEY property = 'Change' INTO ls_filter.
@@ -397,7 +399,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
     ENDIF.
 
 
-    IF lt_dates IS INITIAL AND lt_users IS INITIAL AND lt_text IS INITIAL AND lt_change IS INITIAL AND lt_trkorr IS INITIAL.
+    IF lt_dates IS INITIAL AND lt_users IS INITIAL AND text_search_string IS INITIAL AND lt_change IS INITIAL AND lt_trkorr IS INITIAL.
       set_date_range(
       EXPORTING
         i_since_x_days = 30
@@ -408,7 +410,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
     APPEND LINES OF lo_dao->get_requests( it_transports = lt_trkorr
                                           it_users = lt_users
                                           it_dates = lt_dates
-                                          it_text = lt_text
+                                          i_text = text_search_string
                                           it_change = lt_change
                                           i_expand_selection = abap_true ) TO et_entityset.
 
@@ -684,19 +686,22 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
         "Get all packages containing code for the the specific change
         "This case will return only all packages that contain source code objects - packages that contain only DDIC objects etc. will not be included
         "The intention is to get a list of packages that contain code relevant for code review
-        LOOP AT lt_all_objects INTO ls_object WHERE is_source = abap_true.
+        LOOP AT lt_all_objects INTO ls_object WHERE is_source = abap_true AND NOT dev_package IS INITIAL.
           ls_package-package = ls_object-dev_package.
           ls_package-description = lo_dao->get_description_for_package( ls_package-package ).
+          ls_package-github_repo = lo_dao->get_github_url( ls_package-package ).
           ls_package-has_code = abap_true.
           IF NOT ls_package-package IS INITIAL.
             APPEND ls_package TO et_entityset.
           ENDIF.
+          CLEAR ls_package.
         ENDLOOP.
       ELSE.
         "Get all packages for the specific change
-        LOOP AT lt_all_objects INTO ls_object.
+        LOOP AT lt_all_objects INTO ls_object WHERE NOT dev_package IS INITIAL.
           ls_package-package = ls_object-dev_package.
           ls_package-description = lo_dao->get_description_for_package( ls_package-package ).
+          ls_package-github_repo = lo_dao->get_github_url( i_package = ls_package-package ).
           READ TABLE lt_all_objects WITH KEY is_source = abap_true TRANSPORTING NO FIELDS.
           IF sy-subrc = 0.
             ls_package-has_code = abap_true.
@@ -704,6 +709,7 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
           IF NOT ls_package-package IS INITIAL.
             APPEND ls_package TO et_entityset.
           ENDIF.
+          CLEAR ls_package.
         ENDLOOP.
       ENDIF.
       SORT et_entityset BY package.
@@ -743,7 +749,20 @@ CLASS zctsw_transport_dpc_ext IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD packageset_get_entity.
 
+    DATA: lo_dao       TYPE REF TO zctsw_transport_dao,
+          package_name TYPE devclass.
 
+    CREATE OBJECT lo_dao.
 
+    package_name = it_key_tab[ 1 ]-value .
+
+    IF lo_dao->package_exists( package_name  ).
+      er_entity-package = package_name.
+      er_entity-description = lo_dao->get_description_for_package( package_name ).
+      er_entity-github_repo = lo_dao->get_github_url( package_name ).
+    ENDIF.
+
+  ENDMETHOD.
 ENDCLASS.

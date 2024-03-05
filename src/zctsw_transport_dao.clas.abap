@@ -55,7 +55,7 @@ CLASS zctsw_transport_dao DEFINITION
         !it_users            TYPE zctsw_user_range_t OPTIONAL
         !it_transports       TYPE zctsw_transport_range_t OPTIONAL
         !it_dates            TYPE zctsw_date_range_t OPTIONAL
-        !it_text             TYPE /iwbep/t_cod_select_options OPTIONAL
+        i_text               TYPE as4text OPTIONAL
         !it_change           TYPE /iwbep/t_cod_select_options OPTIONAL
         !i_expand_selection  TYPE abap_bool
       RETURNING
@@ -135,6 +135,15 @@ CLASS zctsw_transport_dao DEFINITION
         it_packages        TYPE /iwbep/t_cod_select_options
       RETURNING
         VALUE(rt_packages) TYPE gakh_t_tdevc.
+    METHODS get_github_url
+      IMPORTING
+        i_package       TYPE zctsw_package_s-package
+      RETURNING
+        VALUE(r_result) TYPE zctsw_package_s-github_repo.
+    METHODS package_exists
+      IMPORTING
+                i_package_name  TYPE devclass
+      RETURNING VALUE(r_exists) TYPE abap_bool.
 
 
   PROTECTED SECTION.
@@ -155,12 +164,42 @@ CLASS zctsw_transport_dao DEFINITION
       IMPORTING
                 i_trkorr             TYPE trkorr
       RETURNING VALUE(r_is_released) TYPE abap_bool.
+    METHODS is_toc_ok
+      IMPORTING
+        !i_parent_request TYPE trkorr
+      RETURNING
+        VALUE(result)     TYPE boolean.
+    METHODS all_tasks_released
+      IMPORTING
+        !i_parent_request TYPE trkorr
+      RETURNING
+        VALUE(result)     TYPE boolean.
+    METHODS task_get_latest_change_time
+      IMPORTING
+        !i_parent_request TYPE trkorr
+      RETURNING
+        VALUE(result)     TYPE tstamp.
+    METHODS toc_get_latest_change_time
+      IMPORTING
+        !i_parent_request TYPE trkorr
+      RETURNING
+        VALUE(result)     TYPE tstamp.
+    METHODS get_latest_toc_trkorr
+      IMPORTING
+        !i_parent_request TYPE trkorr
+      RETURNING
+        VALUE(result)     TYPE trkorr.
+    METHODS get_latest_toc_returncode
+      IMPORTING
+        !i_parent_request TYPE trkorr
+      RETURNING
+        VALUE(result)     TYPE strw_int4.
 
 ENDCLASS.
 
 
 
-CLASS zctsw_transport_dao IMPLEMENTATION.
+CLASS ZCTSW_TRANSPORT_DAO IMPLEMENTATION.
 
 
   METHOD constructor.
@@ -172,6 +211,7 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
         tt_types_out = gt_object_types.
 
   ENDMETHOD.
+
 
   METHOD get_username_from_email.
 *-----------------------------------------------------------------------
@@ -186,6 +226,7 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
     ENDIF.
 
   ENDMETHOD.
+
 
   METHOD get_adt_url_for_object.
 *-----------------------------------------------------------------------
@@ -594,47 +635,67 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
 
 
     " Get requests
-    SELECT  trkorr
-            trfunction
-            trstatus
-            tarsystem
-            as4user
-            as4date
-            as4time
-            strkorr
-            as4text
-            client
-      FROM e070v                                          "#EC CI_SUBRC
-      INTO CORRESPONDING FIELDS OF TABLE rt_transports
-      WHERE ( trfunction = 'K' OR trfunction = 'W' )   "Workbench and customizing requests
-      AND   strkorr = space
-      AND   as4user IN it_users
-      AND   trkorr IN it_transports
-      AND   as4date IN it_dates
-      AND   as4text IN it_text
-      AND   as4text IN it_change.
+    IF i_text IS INITIAL.
+      SELECT  trkorr,
+              trfunction,
+              trstatus,
+              tarsystem,
+              as4user,
+              as4date,
+              as4time,
+              strkorr,
+              as4text,
+              client
+        FROM e070v                                        "#EC CI_SUBRC
+        WHERE ( trfunction = 'K' OR trfunction = 'W' )   "Workbench and customizing requests
+        AND   strkorr = @space
+        AND   as4user IN @it_users
+        AND   trkorr IN @it_transports
+        AND   as4date IN @it_dates
+        AND   as4text IN @it_change
+        INTO CORRESPONDING FIELDS OF TABLE @rt_transports.
+    ELSE.
+      SELECT  trkorr,
+              trfunction,
+              trstatus,
+              tarsystem,
+              as4user,
+              as4date,
+              as4time,
+              strkorr,
+              as4text,
+              client
+        FROM e070v                                        "#EC CI_SUBRC
+        WHERE ( trfunction = 'K' OR trfunction = 'W' )   "Workbench and customizing requests
+        AND   strkorr = @space
+        AND   as4user IN @it_users
+        AND   trkorr IN @it_transports
+        AND   as4date IN @it_dates
+        AND   upper( as4text ) LIKE @i_text
+        INTO CORRESPONDING FIELDS OF TABLE @rt_transports.
 
+    ENDIF.
     IF i_expand_selection = abap_true.
       " Get requests where user has a task
       IF NOT it_users IS INITIAL.
-        SELECT  b~trkorr
-                b~trfunction
-                b~trstatus
-                b~tarsystem
-                b~as4user
-                b~as4date
-                b~as4time
-                b~strkorr
-                b~as4text
+        SELECT  b~trkorr,
+                b~trfunction,
+                b~trstatus,
+                b~tarsystem,
+                b~as4user,
+                b~as4date,
+                b~as4time,
+                b~strkorr,
+                b~as4text,
                 b~client
           FROM e070v AS a   "Task                    "#EC CI_SUBRC
           JOIN e070v AS b   "Request
            ON   a~strkorr = b~trkorr
-          APPENDING CORRESPONDING FIELDS OF TABLE rt_transports
-          WHERE   a~as4user IN it_users
-          AND     a~trkorr  IN it_transports
-          AND     a~as4date IN it_dates
-          AND     b~as4text IN it_text.
+          WHERE   a~as4user IN @it_users
+          AND     a~trkorr  IN @it_transports
+          AND     a~as4date IN @it_dates
+          AND    upper( a~as4text ) LIKE @i_text
+          APPENDING CORRESPONDING FIELDS OF TABLE @rt_transports.
       ENDIF.
 
       "Expand selection to all request belonging to same change
@@ -706,6 +767,10 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
                                          ls_transport-as4time+4(2)      &&
                                          'Z'.
 
+      ls_transport-all_tasks_released = all_tasks_released(  ls_transport-trkorr ).
+      ls_transport-toc_ok = is_toc_ok( ls_transport-trkorr ).
+      ls_transport-last_toc_trkorr = get_latest_toc_trkorr( ls_transport-trkorr ).
+      ls_transport-last_toc_rc = get_latest_toc_returncode( ls_transport-last_toc_trkorr ).
 
       MODIFY rt_transports FROM ls_transport.
     ENDLOOP.
@@ -713,6 +778,180 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
     SORT rt_transports BY change DESCENDING as4date DESCENDING as4time DESCENDING.
 
 
+  ENDMETHOD.
+
+
+  METHOD all_tasks_released.
+    SELECT SINGLE trkorr
+      FROM e070                                           "#EC CI_SUBRC
+      INTO @DATA(unreleased_task)
+      WHERE strkorr = @i_parent_request
+      AND   trstatus <> 'R'
+      AND   trstatus <> 'O'
+      AND   trstatus <> 'N'
+      AND   trstatus <> 'P'.
+    IF sy-subrc = 0.
+      result = abap_false.
+    ELSE.
+      result = abap_true.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD is_toc_ok.
+    DATA(latest_task_change_time) = task_get_latest_change_time( i_parent_request ).
+    IF latest_task_change_time IS INITIAL.
+      result = abap_true. " no task found
+      RETURN.
+    ENDIF.
+
+    DATA(latest_toc_change_time) = toc_get_latest_change_time( i_parent_request ).
+    IF latest_toc_change_time IS INITIAL.
+      result = abap_false. " no ToC found
+    ENDIF.
+
+    IF latest_toc_change_time > latest_task_change_time.
+      result = abap_true.
+    ELSE.
+      result = abap_false.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD task_get_latest_change_time.
+    " Task change timestamp in table E070 cannot be used to determine
+    " when the latest change has been done, as it is also updated whenever
+    " the parent transport is released. Therefore it will look like the
+    " task was changed/released *after* the latest ToC was done.
+    "
+    " we need to look at the timestmap in the action log of the task
+    DATA logfile TYPE trfile.
+    DATA loglines TYPE TABLE OF trlog.
+    DATA sysname TYPE tcesyst-sysname.
+    DATA taskchangetime TYPE string.
+    DATA taskchangetimes TYPE TABLE OF string.
+
+    " get all tasks for the parent request
+    SELECT trkorr
+      FROM e070                                           "#EC CI_SUBRC
+      INTO TABLE @DATA(tasks)
+      WHERE strkorr = @i_parent_request.
+
+    LOOP AT tasks INTO DATA(trkorr).
+      " get filename of logfile for this task
+      sysname = sy-sysid.
+      CALL FUNCTION 'STRF_OPEN_PROT'
+        EXPORTING
+          acttype    = 'Z'
+          sysname    = sysname
+          trkorr     = trkorr
+        IMPORTING
+          file       = logfile
+        EXCEPTIONS
+          wrong_call = 1
+          OTHERS     = 2.
+
+      IF sy-subrc = 0.
+        " read the action log file
+        CALL FUNCTION 'TRINT_READ_LOG'
+          EXPORTING
+            iv_log_type       = 'FILE'
+            iv_logname_file   = logfile
+          TABLES
+            et_lines          = loglines
+          EXCEPTIONS
+            invalid_input     = 1
+            file_access_error = 2
+            db_access_error   = 3
+            OTHERS            = 4.
+
+        " collect timestamps from log lines
+        LOOP AT loglines REFERENCE INTO DATA(logline).
+          " look for time and date. Example string:
+          " 04.03.2024 13:48:43 999024 started the release of the request/task
+          FIND FIRST OCCURRENCE OF PCRE '(^\d\d\.\d\d\.\d\d\d\d\ \d\d:\d\d:\d\d)' IN logline->line
+              SUBMATCHES DATA(rawtime).
+
+          IF rawtime IS NOT INITIAL.
+            TRANSLATE rawtime USING '. : '. " remove . and :
+            CONDENSE rawtime NO-GAPS.       " remove the spaces
+
+            " rearrange into YYYYMMDDHHMMSS
+            taskchangetime = |{ rawtime+4(4) }{ rawtime+2(2) }{ rawtime(2) }{ rawtime+8(6) }|.
+            APPEND taskchangetime TO taskchangetimes.
+          ENDIF.
+        ENDLOOP.
+      ENDIF.
+    ENDLOOP.
+
+    " get the latest changed time
+    SORT taskchangetimes DESCENDING.
+    READ TABLE taskchangetimes INDEX 1 INTO taskchangetime.
+
+    IF taskchangetime IS INITIAL.
+      " if no timestamp for release ->
+      result = '99991231235959'.
+    ELSE.
+      result = taskchangetime.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD toc_get_latest_change_time.
+    DATA(toc_text) = |ToC from { i_parent_request }%|.
+
+    SELECT as4date,
+           as4time
+      FROM e070v
+      INTO TABLE @DATA(latest_toc_transports)
+      UP TO 1 ROWS
+      WHERE trfunction = 'T' " ToC
+      AND   as4text LIKE @toc_text
+      ORDER BY as4date DESCENDING, as4time DESCENDING.
+
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    READ TABLE latest_toc_transports INDEX 1 REFERENCE INTO DATA(latest_toc_transport).
+
+    result = latest_toc_transport->as4date && latest_toc_transport->as4time.
+  ENDMETHOD.
+
+
+  METHOD get_latest_toc_trkorr.
+    DATA(toc_text) = |ToC from { i_parent_request }%|.
+
+    SELECT trkorr
+      FROM e070v
+      INTO TABLE @DATA(latest_toc_trkorrs)
+      UP TO 1 ROWS
+      WHERE trfunction = 'T' " ToC
+      AND   as4text LIKE @toc_text
+      ORDER BY as4date DESCENDING, as4time DESCENDING.
+
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    READ TABLE latest_toc_trkorrs INDEX 1 REFERENCE INTO DATA(latest_toc_trkorr).
+
+    result = latest_toc_trkorr->trkorr.
+  ENDMETHOD.
+
+
+  METHOD get_latest_toc_returncode.
+    CHECK i_parent_request IS NOT INITIAL.
+
+    DATA(ls_migration_status) = get_migration_status( i_parent_request ).
+
+    IF ls_migration_status-imported = abap_true.
+      LOOP AT ls_migration_status-systems INTO DATA(ls_system) WHERE systemid <> sy-sysid.
+        result = ls_system-rc.
+      ENDLOOP.
+    ELSE.
+      result = 99. " Not imported
+    ENDIF.
   ENDMETHOD.
 
 
@@ -942,6 +1181,7 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
 
   ENDMETHOD.
 
+
   METHOD get_package_for_object.
 *-----------------------------------------------------------------------
 * Get package for object
@@ -955,6 +1195,7 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
      AND   obj_name = i_obj_name.
 
   ENDMETHOD.
+
 
   METHOD get_app_component_for_package.
 *-----------------------------------------------------------------------
@@ -983,6 +1224,7 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
 
   ENDMETHOD.
 
+
   METHOD get_description_for_package.
 
     SELECT SINGLE ctext INTO r_result FROM tdevct
@@ -997,6 +1239,7 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
 
   ENDMETHOD.
 
+
   METHOD get_packages.
 
     SELECT * FROM tdevc INTO TABLE rt_packages
@@ -1004,4 +1247,30 @@ CLASS zctsw_transport_dao IMPLEMENTATION.
 
   ENDMETHOD.
 
+
+  METHOD get_github_url.
+
+    zcl_abapgit_repo_srv=>get_instance( )->get_repo_from_package( EXPORTING iv_package = i_package
+                                                                  IMPORTING ei_repo = DATA(repo) ).
+    IF NOT repo IS INITIAL.
+      r_result = repo->ms_data-url.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD package_exists.
+
+    SELECT SINGLE * FROM tdevc INTO @DATA(ls_package)
+        WHERE devclass = @i_package_name .
+
+    IF sy-subrc = 0.
+      r_exists = abap_true.
+    ELSE.
+      r_exists = abap_false.
+    ENDIF.
+
+
+
+  ENDMETHOD.
 ENDCLASS.
